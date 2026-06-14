@@ -149,6 +149,10 @@ textarea {
   border-bottom: 1px solid #d8e1dc;
 }
 
+.assistant-result-block > .card-grid {
+  padding: 12px;
+}
+
 .result-section {
   padding: 0 12px 12px;
 }
