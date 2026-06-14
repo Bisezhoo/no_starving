@@ -27,6 +27,7 @@ export type BaseCard = {
   imageUrl?: string;
   tags?: string[];
   ingredients?: IngredientItem[];
+  localizedIngredients?: IngredientItem[];
   instructions?: string[];
   localizedSummary?: string;
   localizedInstructions?: string[];
@@ -37,6 +38,8 @@ export type MealCard = BaseCard & {
   type: "meal";
   category?: string;
   country?: string;
+  localizedCategory?: string;
+  localizedCountry?: string;
   sourceUrl?: string;
   youtubeUrl?: string;
 };
@@ -46,6 +49,9 @@ export type CocktailCard = BaseCard & {
   category?: string;
   alcoholic?: string;
   glass?: string;
+  localizedCategory?: string;
+  localizedAlcoholic?: string;
+  localizedGlass?: string;
 };
 
 export type Card = MealCard | CocktailCard;

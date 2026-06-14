@@ -4,8 +4,9 @@ import logging
 import pytest
 
 from app.core.config import Settings
-from app.domain.models import AgentMemory, MealCard, TasteProfile, ToolDataResult
+from app.domain.models import AgentMemory, IngredientItem, MealCard, TasteProfile, ToolDataResult
 from app.services.agent_orchestrator import AgentOrchestrator
+from app.services.card_translation_service import CardTranslationResult
 
 
 class RepeatingToolLlm:
@@ -89,6 +90,19 @@ class FakeMemoryStore:
         return []
 
 
+class FakeCardTranslationService:
+    def __init__(self):
+        self.calls = []
+
+    async def localize_cards(self, cards, locale, include_instructions=False):
+        self.calls.append({"cards": cards, "locale": locale, "include_instructions": include_instructions})
+        localized = [card.model_copy(deep=True) for card in cards]
+        localized[0].localizedLanguage = locale
+        localized[0].localizedTitle = "鸡肉饭"
+        localized[0].localizedIngredients = [IngredientItem(name="鸡肉"), IngredientItem(name="米饭")]
+        return CardTranslationResult(cards=localized, warnings=["部分卡片翻译未通过校验，已保留原始内容"])
+
+
 @pytest.mark.asyncio
 async def test_max_tool_calls_stops_loop_and_returns_warning():
     fake_tool_runner = FakeToolRunner()
@@ -102,7 +116,7 @@ async def test_max_tool_calls_stops_loop_and_returns_warning():
     events = [event async for event in agent.run("我想吃鸡肉")]
     done = [event for event in events if event.event == "done"][-1]
 
-    assert "已达 Tool 调用上限" in done.data["warnings"][0]
+    assert "已达 Tool 调用上限，请重试哦" in done.data["warnings"][0]
     assert fake_tool_runner.call_count == 1
 
 
@@ -149,6 +163,29 @@ async def test_agent_emits_cards_and_persists_memory_after_tool_result():
     assert memory_store.saved_history[0].itemId == "meal_1"
     assert memory_store.saved_memory.recentTurns[-2]["role"] == "user"
     assert memory_store.saved_memory.recentTurns[-2]["content"] != "我喜欢鸡肉"
+
+
+@pytest.mark.asyncio
+async def test_agent_uses_card_translation_service_before_emitting_cards():
+    translation_service = FakeCardTranslationService()
+    agent = AgentOrchestrator(
+        llm=OneToolThenReplyLlm(),
+        tool_runner=CardToolRunner(),
+        card_translation_service=translation_service,
+        max_tool_calls=6,
+        max_llm_steps=4,
+    )
+
+    events = [event async for event in agent.run("我喜欢鸡肉")]
+    card_event = [event for event in events if event.event == "card"][0]
+    done = [event for event in events if event.event == "done"][-1]
+
+    assert translation_service.calls[0]["locale"] == "zh-CN"
+    assert translation_service.calls[0]["include_instructions"] is False
+    assert card_event.data["cards"][0]["localizedTitle"] == "鸡肉饭"
+    assert card_event.data["cards"][0]["localizedIngredients"][0]["name"] == "鸡肉"
+    assert done.data["cards"][0]["localizedTitle"] == "鸡肉饭"
+    assert done.data["warnings"] == ["部分卡片翻译未通过校验，已保留原始内容"]
 
 
 @pytest.mark.asyncio

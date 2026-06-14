@@ -62,6 +62,58 @@ describe("cards", () => {
     expect(wrapper.text()).toContain("查看详情");
   });
 
+  it("prefers localized meal card display fields", () => {
+    const wrapper = mount(MealCard, {
+      props: {
+        card: {
+          type: "meal",
+          id: "1",
+          title: "Chicken Rice",
+          localizedTitle: "鸡肉饭",
+          imageUrl: "",
+          category: "Chicken",
+          country: "Japanese",
+          localizedCategory: "鸡肉",
+          localizedCountry: "日式",
+          localizedSummary: "适合想吃鸡肉的晚餐。",
+          tags: [],
+          ingredients: [],
+        },
+      },
+    });
+
+    expect(wrapper.text()).toContain("鸡肉饭");
+    expect(wrapper.text()).toContain("适合想吃鸡肉的晚餐。");
+    expect(wrapper.text()).toContain("鸡肉");
+    expect(wrapper.text()).toContain("日式");
+  });
+
+  it("prefers localized cocktail card display fields", () => {
+    const wrapper = mount(CocktailCard, {
+      props: {
+        card: {
+          type: "cocktail",
+          id: "2",
+          title: "Lemonade",
+          localizedTitle: "柠檬饮",
+          category: "Ordinary Drink",
+          alcoholic: "Non alcoholic",
+          glass: "Highball glass",
+          localizedCategory: "普通饮品",
+          localizedAlcoholic: "无酒精",
+          localizedGlass: "高球杯",
+          tags: [],
+          ingredients: [],
+        },
+      },
+    });
+
+    expect(wrapper.text()).toContain("柠檬饮");
+    expect(wrapper.text()).toContain("普通饮品");
+    expect(wrapper.text()).toContain("无酒精");
+    expect(wrapper.text()).toContain("高球杯");
+  });
+
   it("does not render card details inline before opening the detail modal", () => {
     const wrapper = mount(AssistantResultBlock, {
       props: {
@@ -133,6 +185,34 @@ describe("cards", () => {
 
     expect(wrapper.find(".detail-modal").text()).toContain("步骤 1：把鸡肉和米饭一起煮熟。");
     expect(wrapper.find(".detail-modal").text()).not.toContain("Cook chicken with rice.");
+  });
+
+  it("prefers localized title, meta and ingredients in the detail modal", async () => {
+    const wrapper = mount(AssistantResultBlock, {
+      props: {
+        message: createAssistantMessage([
+          {
+            ...createMealCard("1", "Chicken Rice"),
+            localizedTitle: "鸡肉饭",
+            category: "Chicken",
+            country: "Japanese",
+            localizedCategory: "鸡肉",
+            localizedCountry: "日式",
+            ingredients: [{ name: "Chicken", measure: "1 cup" }],
+            localizedIngredients: [{ name: "鸡肉", measure: "1 杯" }],
+          },
+        ]),
+      },
+    });
+
+    await wrapper.get("button.card-detail-button").trigger("click");
+
+    const text = wrapper.find(".detail-modal").text();
+    expect(text).toContain("鸡肉饭");
+    expect(text).toContain("鸡肉");
+    expect(text).toContain("日式");
+    expect(text).toContain("鸡肉 · 1 杯");
+    expect(text).not.toContain("Chicken · 1 cup");
   });
 
   it("renders all recommendation cards without toggle when three or fewer are returned", () => {

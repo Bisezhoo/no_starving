@@ -19,11 +19,11 @@
     </div>
 
     <div v-if="selectedCard" class="detail-modal-backdrop" @click.self="closeDetail">
-      <article class="detail-modal" role="dialog" aria-modal="true" :aria-label="`${selectedCard.title} 详情`">
+      <article class="detail-modal" role="dialog" aria-modal="true" :aria-label="`${displayTitle(selectedCard)} 详情`">
         <header class="detail-modal-header">
           <div>
             <p class="detail-modal-eyebrow">推荐详情</p>
-            <h3>{{ selectedCard.title }}</h3>
+            <h3>{{ displayTitle(selectedCard) }}</h3>
           </div>
           <button class="detail-modal-close" type="button" @click="closeDetail">关闭</button>
         </header>
@@ -34,10 +34,10 @@
           <span v-for="item in detailMetaItems(selectedCard)" :key="item">{{ item }}</span>
         </div>
 
-        <section v-if="selectedCard.ingredients?.length" class="detail-section">
+        <section v-if="ingredientsFor(selectedCard).length" class="detail-section">
           <h4>食材 / 配料</h4>
           <ul class="detail-ingredient-list">
-            <li v-for="ingredient in selectedCard.ingredients" :key="ingredient.name">
+            <li v-for="ingredient in ingredientsFor(selectedCard)" :key="ingredient.name">
               {{ ingredient.name }}<span v-if="ingredient.measure"> · {{ ingredient.measure }}</span>
             </li>
           </ul>
@@ -87,13 +87,22 @@ const toggleExpanded = () => {
 
 const isMealCard = (card: Card): card is MealCardType => card.type === "meal";
 const isCocktailCard = (card: Card): card is CocktailCardType => card.type === "cocktail";
+const displayTitle = (card: Card) => card.localizedTitle || card.title;
+const ingredientsFor = (card: Card) => card.localizedIngredients?.length ? card.localizedIngredients : card.ingredients ?? [];
 const stepsFor = (card: Card) => card.localizedInstructions?.length ? card.localizedInstructions : card.instructions ?? [];
 const detailMetaItems = (card: Card) => {
   if (isMealCard(card)) {
-    return [card.category, card.country].filter(Boolean);
+    return [
+      card.localizedCategory || card.category,
+      card.localizedCountry || card.country,
+    ].filter(Boolean);
   }
 
-  return [card.category, card.alcoholic, card.glass].filter(Boolean);
+  return [
+    card.localizedCategory || card.category,
+    card.localizedAlcoholic || card.alcoholic,
+    card.localizedGlass || card.glass,
+  ].filter(Boolean);
 };
 
 const openDetail = (card: Card) => {

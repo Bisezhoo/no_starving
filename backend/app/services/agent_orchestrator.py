@@ -6,11 +6,12 @@ from typing import Any, AsyncIterator
 from uuid import uuid4
 
 from app.core.logging import get_logger, log_event
-from app.domain.card_localization import localize_cards, should_localize_instructions
+from app.domain.card_localization import should_localize_instructions
 from app.domain.language import detect_locale
 from app.domain.models import AgentMemory, AgentMemoryCandidate, Card, SseEvent, ToolCallSummary
 from app.domain.recommendation import append_history, rank_recommendations
 from app.domain.taste_profile import merge_profile_from_message
+from app.services.card_translation_service import CardTranslationService
 from app.services.conversation_state import ConversationState
 
 
@@ -22,14 +23,16 @@ class AgentOrchestrator:
         memory_store: Any | None = None,
         settings: Any | None = None,
         logger: logging.Logger | None = None,
-        max_tool_calls: int = 6,
-        max_llm_steps: int = 4,
+        card_translation_service: Any | None = None,
+        max_tool_calls: int = 12,
+        max_llm_steps: int = 6,
     ):
         self.llm = llm
         self.tool_runner = tool_runner
         self.memory_store = memory_store
         self.settings = settings
         self.logger = logger or get_logger(__name__)
+        self.card_translation_service = card_translation_service or CardTranslationService(settings=settings, logger=self.logger)
         self.max_tool_calls = max_tool_calls
         self.max_llm_steps = max_llm_steps
 
@@ -111,7 +114,7 @@ class AgentOrchestrator:
 
             for call in tool_calls:
                 if tool_call_count >= self.max_tool_calls:
-                    warnings.append("接口被我查冒烟了，请重试！QAQ")
+                    warnings.append("已达 Tool 调用上限，请重试哦")
                     yield await self._build_done_event(
                         reply="",
                         cards=displayed_cards,
@@ -152,7 +155,13 @@ class AgentOrchestrator:
                     yield SseEvent(event="tool_result", data=data)
                     ranked_cards = _rank_new_cards(cached_cards, profile, history, displayed_cards)
                     if ranked_cards:
-                        displayed_cards.extend(localize_cards(ranked_cards, detected_locale, include_localized_instructions))
+                        localization_result = await self.card_translation_service.localize_cards(
+                            ranked_cards,
+                            detected_locale,
+                            include_localized_instructions,
+                        )
+                        _append_warnings_once(warnings, localization_result.warnings)
+                        displayed_cards.extend(localization_result.cards)
                         yield SseEvent(event="card", data={"cards": _dump_cards(displayed_cards)})
                     continue
 
@@ -165,10 +174,16 @@ class AgentOrchestrator:
                 yield SseEvent(event="tool_result", data=data)
                 ranked_cards = _rank_new_cards(getattr(result, "cards", []), profile, history, displayed_cards)
                 if ranked_cards:
-                    displayed_cards.extend(localize_cards(ranked_cards, detected_locale, include_localized_instructions))
+                    localization_result = await self.card_translation_service.localize_cards(
+                        ranked_cards,
+                        detected_locale,
+                        include_localized_instructions,
+                    )
+                    _append_warnings_once(warnings, localization_result.warnings)
+                    displayed_cards.extend(localization_result.cards)
                     yield SseEvent(event="card", data={"cards": _dump_cards(displayed_cards)})
 
-        warnings.append("我拼尽全力了，找不到更多了QAQ，请重试")
+        warnings.append("已达 LLM 推理步数上限")
         yield await self._build_done_event(
             reply="",
             cards=displayed_cards,
@@ -355,3 +370,9 @@ def _profile_field_count(profile: Any) -> int:
 
 def _duration_ms(started: float) -> int:
     return int((time.perf_counter() - started) * 1000)
+
+
+def _append_warnings_once(existing: list[str], incoming: list[str]) -> None:
+    for warning in incoming:
+        if warning not in existing:
+            existing.append(warning)

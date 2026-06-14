@@ -2,6 +2,7 @@ import pytest
 
 from app.core.config import Settings
 from app.services import default_agent
+from app.services.card_translation_service import OpenRouterCardTranslator
 from app.services.openrouter_client import OpenRouterClient
 
 
@@ -40,6 +41,37 @@ def test_default_agent_passes_outbound_http_proxy_to_external_clients(monkeypatc
     assert captured["meal"]["trust_env"] is False
     assert captured["cocktail"]["trust_env"] is False
     assert captured["openrouter"]["trust_env"] is False
+
+
+def test_default_agent_configures_openrouter_card_translator(monkeypatch, tmp_path):
+    captured = {}
+
+    class FakeMealDbClient:
+        def __init__(self, base_url, proxy=None, trust_env=True):
+            return None
+
+    class FakeCocktailDbClient:
+        def __init__(self, base_url, proxy=None, trust_env=True):
+            return None
+
+    class FakeOpenRouterClient:
+        def __init__(self, api_key, model, base_url, proxy=None, trust_env=True):
+            captured["client"] = self
+
+    monkeypatch.setattr(default_agent, "MealDbClient", FakeMealDbClient)
+    monkeypatch.setattr(default_agent, "CocktailDbClient", FakeCocktailDbClient)
+    monkeypatch.setattr(default_agent, "OpenRouterClient", FakeOpenRouterClient)
+
+    settings = Settings(
+        OPENROUTER_API_KEY="sk-test",
+        OPENROUTER_MODEL="deepseek/deepseek-chat",
+        _env_file=None,
+    )
+
+    agent = default_agent.build_default_agent(settings, data_dir=tmp_path)
+
+    assert isinstance(agent.card_translation_service.translator, OpenRouterCardTranslator)
+    assert agent.card_translation_service.translator.client is captured["client"]
 
 
 @pytest.mark.asyncio

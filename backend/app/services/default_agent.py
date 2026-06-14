@@ -11,6 +11,7 @@ from app.domain.tool_args import (
     validate_search_meals_args,
 )
 from app.services.agent_orchestrator import AgentOrchestrator
+from app.services.card_translation_service import CardTranslationService, OpenRouterCardTranslator
 from app.services.memory_store import MemoryStore
 from app.services.openrouter_client import OpenRouterClient, OpenRouterStepLlm
 from app.services.tool_runner import ToolRunner
@@ -50,12 +51,17 @@ def build_default_agent(settings: Settings, data_dir: Path | str | None = None) 
         trust_env=settings.outbound_http_trust_env,
     )
     llm = OpenRouterStepLlm(client=openrouter, tools=_tool_specs())
+    card_translation_service = CardTranslationService(
+        translator=OpenRouterCardTranslator(openrouter),
+        settings=settings,
+    )
     store = MemoryStore(Path(data_dir) if data_dir is not None else _default_data_dir())
     return AgentOrchestrator(
         llm=llm,
         tool_runner=tool_runner,
         memory_store=store,
         settings=settings,
+        card_translation_service=card_translation_service,
         max_tool_calls=settings.agent_max_tool_calls,
         max_llm_steps=settings.agent_max_llm_steps,
     )

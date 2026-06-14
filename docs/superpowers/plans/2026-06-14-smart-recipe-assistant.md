@@ -12,11 +12,11 @@
 
 | 项目 | 内容 |
 |------|------|
-| 文档版本 | v0.13 |
-| 最近更新时间 | 2026-06-14 22:13:12 CST |
+| 文档版本 | v0.14 |
+| 最近更新时间 | 2026-06-15 00:37:16 CST |
 | 文档状态 | ✅ 计划已完成 |
-| 关联需求 | `智能食谱助手需求分析.md` v0.29 |
-| 关联设计 | `智能食谱助手技术设计.md` v0.34 |
+| 关联需求 | `智能食谱助手需求分析.md` v0.37 |
+| 关联设计 | `智能食谱助手技术设计.md` v0.44 |
 
 ## 1. 执行边界
 
@@ -53,6 +53,7 @@
 | `backend/app/services/conversation_state.py` | 单 Agent 内存状态与候选卡片引用 |
 | `backend/app/services/memory_store.py` | 本地 JSON 读写、损坏恢复、原子替换 |
 | `backend/app/services/openrouter_client.py` | OpenRouter Chat Completions 流式与 Tool Calling 封装 |
+| `backend/app/services/card_translation_service.py` | Tool 结果卡片本地化翻译、LLM patch 校验与失败回退 |
 | `backend/app/services/tool_runner.py` | Tool Harness：校验、超时、重试、轨迹、错误包装 |
 | `backend/app/services/agent_orchestrator.py` | ReAct 主循环、预算熔断、SSE 事件编排、持久化收尾 |
 | `backend/app/adapters/mealdb_client.py` | TheMealDB HTTP 客户端 |
@@ -114,7 +115,8 @@
 | 10D | Markdown 渲染切换为 `marked + DOMPurify` | ✅ 已完成 | 已补链接/代码块/清洗测试；安装 `marked`、`dompurify`；前端组件 7 passed；前端全量 13 passed；`npm run build` 通过 |
 | 10E | Tool 后语言闭环与卡片本地化 | ✅ 已完成 | 已补 `detectedLocale` 传入 LLM 上下文、Tool 结果语言约束、卡片 `localizedSummary/localizedLanguage/localizedInstructions` 和前端本地化步骤优先展示；后端相关回归 14 passed，前端相关回归 6 passed |
 | 10F | 日志安全与结构化日志补齐 | ✅ 已完成 | 新增 `core/logging.py`，补启动、Agent、Tool、OpenRouter、MemoryStore、ChatHistoryStore 结构化日志；敏感字段默认摘要、API Key 始终脱敏；后端全量 57 passed |
-| 11 | 全量验证、代码走读文档和审查准备 | ✅ 已完成 | 后端全量 57 passed；前端全量 22 passed；`npm run build` 通过；已更新代码走读 |
+| 10G | Tool 结果统一翻译与结构校验 | ✅ 已完成 | 新增 `card_translation_service.py`、`OpenRouterCardTranslator`、卡片 `localized*` 字段和前端展示优先级；后端相关回归 15 passed，前端相关回归 17 passed；已更新代码走读 |
+| 11 | 全量验证、代码走读文档和审查准备 | ✅ 已完成 | 后端全量 63 passed；前端全量 39 passed；`npm run build` 通过；已更新代码走读 |
 
 ## 4. 实现任务
 

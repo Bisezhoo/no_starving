@@ -18,8 +18,11 @@ class MealCard(BaseModel):
     imageUrl: str
     category: str | None = None
     country: str | None = None
+    localizedCategory: str | None = None
+    localizedCountry: str | None = None
     tags: list[str] = Field(default_factory=list)
     ingredients: list[IngredientItem] = Field(default_factory=list)
+    localizedIngredients: list[IngredientItem] | None = None
     instructions: list[str] | None = None
     localizedSummary: str | None = None
     localizedInstructions: list[str] | None = None
@@ -39,8 +42,12 @@ class CocktailCard(BaseModel):
     category: str | None = None
     alcoholic: str | None = None
     glass: str | None = None
+    localizedCategory: str | None = None
+    localizedAlcoholic: str | None = None
+    localizedGlass: str | None = None
     tags: list[str] = Field(default_factory=list)
     ingredients: list[IngredientItem] = Field(default_factory=list)
+    localizedIngredients: list[IngredientItem] | None = None
     instructions: list[str] | None = None
     localizedSummary: str | None = None
     localizedInstructions: list[str] | None = None
