@@ -98,7 +98,7 @@
 | 2 | 后端领域模型、语言检测和数据标准化 | ✅ 已完成 | `.venv/bin/python -m pytest tests/unit/test_config.py tests/unit/test_sse.py tests/integration/test_health.py tests/unit/test_language.py tests/unit/test_normalizers.py -q` 通过，7 passed |
 | 3 | Tool 参数英文归一化、来源追踪和防幻觉校验 | ✅ 已完成 | `.venv/bin/python -m pytest -q` 通过，10 passed |
 | 4 | 外部 API Adapter 与 3 个 Tool | ✅ 已完成 | `.venv/bin/python -m pytest -q` 通过，12 passed |
-| 5 | 本地 JSON 持久化、画像、推荐历史和单活跃锁 | ⏳ 待执行 | 覆盖损坏文件、写入失败、锁释放 |
+| 5 | 本地 JSON 持久化、画像、推荐历史和单活跃锁 | ✅ 已完成 | `.venv/bin/python -m pytest -q` 通过，19 passed |
 | 6 | 推荐排序、防重复和硬过滤/软降权 | ⏳ 待执行 | 覆盖禁酒、同 ID 去重、牛肉重复降权 |
 | 7 | OpenRouter 客户端与 Agent ReAct 编排 | ⏳ 待执行 | 覆盖 DeepSeek 配置、预算熔断、`retryOf` 共享 |
 | 8 | FastAPI Chat SSE 集成 | ⏳ 待执行 | 覆盖 HTTP 400/409、SSE 事件、`done.warnings` |
