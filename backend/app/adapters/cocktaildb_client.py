@@ -1,0 +1,27 @@
+from typing import Any
+
+import httpx
+
+
+class CocktailDbClient:
+    def __init__(self, base_url: str, timeout_seconds: float = 8):
+        self.base_url = base_url.rstrip("/") + "/"
+        self.timeout_seconds = timeout_seconds
+
+    async def search(self, query: str) -> dict[str, Any]:
+        return await self._get("search.php", {"s": query})
+
+    async def filter_by_ingredient(self, ingredient: str) -> dict[str, Any]:
+        return await self._get("filter.php", {"i": ingredient})
+
+    async def lookup(self, drink_id: str) -> dict[str, Any]:
+        return await self._get("lookup.php", {"i": drink_id})
+
+    async def random(self) -> dict[str, Any]:
+        return await self._get("random.php", {})
+
+    async def _get(self, endpoint: str, params: dict[str, str]) -> dict[str, Any]:
+        async with httpx.AsyncClient(base_url=self.base_url, timeout=self.timeout_seconds, trust_env=False) as client:
+            response = await client.get(endpoint, params=params)
+            response.raise_for_status()
+            return response.json()

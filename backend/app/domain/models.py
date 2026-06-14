@@ -103,3 +103,11 @@ class AgentMemory(BaseModel):
 class SseEvent(BaseModel):
     event: str
     data: dict[str, Any]
+
+
+class ToolDataResult(BaseModel):
+    status: str
+    cards: list[Card] = Field(default_factory=list)
+    resultCount: int = 0
+    lookupCount: int = 0
+    error: str | None = None
