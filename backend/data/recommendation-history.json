@@ -1,0 +1,73 @@
+[
+  {
+    "category": "Chicken",
+    "cuisine": "China",
+    "itemId": "53365",
+    "itemType": "meal",
+    "mainIngredients": [
+      "orange",
+      "orange juice",
+      "soy sauce",
+      "water",
+      "rice vinegar",
+      "cornstarch",
+      "sesame seed oil",
+      "sugar",
+      "chicken thighs",
+      "egg",
+      "salt",
+      "black pepper",
+      "cornstarch",
+      "all purpose flour",
+      "vegetable oil",
+      "garlic",
+      "shallots",
+      "scallions",
+      "sesame seed",
+      "rice"
+    ],
+    "matchReasons": [],
+    "recommendedAt": "2026-06-14T11:45:05.519894+00:00",
+    "title": "Chinese Orange Chicken"
+  },
+  {
+    "category": "Vegetarian",
+    "cuisine": "China",
+    "itemId": "53372",
+    "itemType": "meal",
+    "mainIngredients": [
+      "plum tomatoes",
+      "vegetable oil",
+      "eggs",
+      "sesame seed oil",
+      "chicken bouillon powder",
+      "sugar",
+      "pepper",
+      "salt",
+      "spring onions",
+      "jasmine rice"
+    ],
+    "matchReasons": [],
+    "recommendedAt": "2026-06-14T11:45:05.519894+00:00",
+    "title": "Chinese Tomato Egg Stir Fry"
+  },
+  {
+    "category": "Vegetarian",
+    "cuisine": "China",
+    "itemId": "53371",
+    "itemType": "meal",
+    "mainIngredients": [
+      "chinese long beans",
+      "peanut oil",
+      "dried chillies",
+      "sichuan pepper",
+      "salt",
+      "sugar",
+      "sesame seed oil",
+      "soy sauce"
+    ],
+    "matchReasons": [],
+    "recommendedAt": "2026-06-14T11:45:05.519894+00:00",
+    "title": "Sichuan Style Stir-Fried Chinese Long Beans"
+  }
+]

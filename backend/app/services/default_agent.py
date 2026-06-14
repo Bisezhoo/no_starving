@@ -19,8 +19,16 @@ from app.tools.meal_tool import get_meal_detail, search_meals
 
 
 def build_default_agent(settings: Settings, data_dir: Path | str | None = None) -> AgentOrchestrator:
-    meal_client = MealDbClient(settings.mealdb_base_url)
-    cocktail_client = CocktailDbClient(settings.cocktaildb_base_url)
+    meal_client = MealDbClient(
+        settings.mealdb_base_url,
+        proxy=settings.outbound_http_proxy,
+        trust_env=settings.outbound_http_trust_env,
+    )
+    cocktail_client = CocktailDbClient(
+        settings.cocktaildb_base_url,
+        proxy=settings.outbound_http_proxy,
+        trust_env=settings.outbound_http_trust_env,
+    )
     tool_runner = ToolRunner(
         tools={
             "search_meals": partial(search_meals, meal_client),
@@ -37,6 +45,8 @@ def build_default_agent(settings: Settings, data_dir: Path | str | None = None) 
         api_key=settings.openrouter_api_key,
         model=settings.openrouter_model,
         base_url=settings.openrouter_base_url,
+        proxy=settings.outbound_http_proxy,
+        trust_env=settings.outbound_http_trust_env,
     )
     llm = OpenRouterStepLlm(client=openrouter, tools=_tool_specs())
     store = MemoryStore(Path(data_dir) if data_dir is not None else _default_data_dir())

@@ -1,15 +1,34 @@
 import json
+from functools import lru_cache
+from pathlib import Path
 from typing import Any, AsyncIterator
 
 import httpx
 
+_PROMPTS_PATH = Path(__file__).resolve().parents[1] / "core" / "prompts.json"
+
+
+@lru_cache(maxsize=1)
+def _load_prompts() -> dict[str, str]:
+    return json.loads(_PROMPTS_PATH.read_text(encoding="utf-8"))
+
 
 class OpenRouterClient:
-    def __init__(self, api_key: str, model: str, base_url: str, timeout_seconds: float = 30):
+    def __init__(
+        self,
+        api_key: str,
+        model: str,
+        base_url: str,
+        timeout_seconds: float = 30,
+        proxy: str | None = None,
+        trust_env: bool = True,
+    ):
         self.api_key = api_key
         self.model = model
         self.base_url = base_url.rstrip("/") + "/"
         self.timeout_seconds = timeout_seconds
+        self.proxy = proxy
+        self.trust_env = trust_env
 
     async def stream_chat(self, messages: list[dict[str, Any]], tools: list[dict[str, Any]]) -> AsyncIterator[str]:
         headers = {
@@ -22,7 +41,12 @@ class OpenRouterClient:
             "tools": tools,
             "stream": True,
         }
-        async with httpx.AsyncClient(base_url=self.base_url, timeout=self.timeout_seconds, trust_env=False) as client:
+        async with httpx.AsyncClient(
+            base_url=self.base_url,
+            timeout=self.timeout_seconds,
+            proxy=self.proxy,
+            trust_env=self.trust_env,
+        ) as client:
             async with client.stream("POST", "chat/completions", headers=headers, json=payload) as response:
                 response.raise_for_status()
                 async for line in response.aiter_lines():
@@ -71,11 +95,8 @@ class OpenRouterStepLlm:
 
 
 def _build_messages(context: dict[str, Any]) -> list[dict[str, str]]:
-    system_prompt = (
-        "You are a recipe assistant. Reply in the user's language. "
-        "Use tools for recipe or drink lookup. Tool query and ingredient arguments must be English. "
-        "Do not invent meal or drink IDs; IDs must come from tool results or candidate cards."
-    )
+    prompts = _load_prompts()
+    system_prompt = prompts["system_prompt"]
     profile = context.get("profile")
     memory = context.get("memory")
     if profile or memory:
@@ -91,7 +112,7 @@ def _build_messages(context: dict[str, Any]) -> list[dict[str, str]]:
             {
                 "role": "user",
                 "content": (
-                    "Tool results are available as JSON. Use only these results for concrete recipe/drink facts:\n"
+                    prompts["tool_results_prefix"] + "\n"
                     + json.dumps(tool_results, ensure_ascii=False, separators=(",", ":"))
                 ),
             }

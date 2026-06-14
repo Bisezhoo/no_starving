@@ -123,6 +123,36 @@ textarea {
   overflow: hidden;
 }
 
+.assistant-message {
+  display: grid;
+  gap: 10px;
+}
+
+.assistant-reply {
+  line-height: 1.65;
+}
+
+.assistant-reply p {
+  margin: 0;
+}
+
+.assistant-result-block {
+  border: 1px solid #d8e1dc;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #ffffff;
+}
+
+.result-block-header {
+  padding: 10px 12px;
+  background: #edf2ef;
+  border-bottom: 1px solid #d8e1dc;
+}
+
+.result-section {
+  padding: 0 12px 12px;
+}
+
 .warning-strip {
   display: grid;
   gap: 4px;

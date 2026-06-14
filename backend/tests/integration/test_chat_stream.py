@@ -36,7 +36,7 @@ async def test_chat_stream_returns_sse_events():
 
 
 def test_create_app_builds_default_agent_when_settings_are_supplied(tmp_path):
-    settings = Settings(openrouter_api_key="sk-test", openrouter_model="deepseek/deepseek-chat")
+    settings = Settings()
     app = create_app(settings=settings, data_dir=tmp_path)
 
     assert isinstance(app.state.agent, AgentOrchestrator)

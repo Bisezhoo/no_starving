@@ -12,11 +12,11 @@
 
 | 项目 | 内容 |
 |------|------|
-| 文档版本 | v0.4 |
-| 最近更新时间 | 2026-06-14 17:52:19 CST |
+| 文档版本 | v0.5 |
+| 最近更新时间 | 2026-06-14 20:02:55 CST |
 | 文档状态 | ✅ 计划已完成 |
-| 关联需求 | `智能食谱助手需求分析.md` v0.25 |
-| 关联设计 | `智能食谱助手技术设计.md` v0.23 |
+| 关联需求 | `智能食谱助手需求分析.md` v0.26 |
+| 关联设计 | `智能食谱助手技术设计.md` v0.26 |
 
 ## 1. 执行边界
 
@@ -76,7 +76,9 @@
 | `frontend/src/components/ChatPage.vue` | Chat 页面状态容器 |
 | `frontend/src/components/MessageList.vue` | 消息列表 |
 | `frontend/src/components/MessageComposer.vue` | 输入框、发送按钮、前端体验校验 |
-| `frontend/src/components/AssistantMessageTabs.vue` | 回复、推荐、食材/步骤、配饮、Tool、画像变化页签 |
+| `frontend/src/components/AssistantMessage.vue` | 单条 Agent 消息展示；文本回复直出，按结构化数据决定是否渲染结果区块 |
+| `frontend/src/components/AssistantResultBlock.vue` | 结构化结果区块；仅在 `cards` 非空时展示卡片，并按需承载食材/步骤、Tool、画像变化辅助视图 |
+| `frontend/src/components/AssistantMessageTabs.vue` | 旧页签组件，Task 10B 中改造或替换为结果区块，不能再包裹所有 Agent 回复 |
 | `frontend/src/components/MealCard.vue` | 菜谱卡片 |
 | `frontend/src/components/CocktailCard.vue` | 饮品卡片 |
 | `frontend/src/components/ToolTracePanel.vue` | Tool 调用轨迹展示 |
@@ -105,7 +107,8 @@
 | 9 | 前端 Vite Vue 基础、类型、API 和 SSE 解析 | ✅ 已完成 | `npm test -- --run` 通过，2 passed；npm 安装使用项目本地 `.npm-cache` |
 | 10 | 前端 Chat UI、页签、卡片、Tool 轨迹和画像展示 | ✅ 已完成 | `npm test -- --run` 通过，6 passed；`npm run build` 通过 |
 | 10A | 验收补洞：默认 Agent 装配、OpenRouter Step 适配、卡片事件和 memory 持久化闭环 | ✅ 已完成 | `.venv/bin/python -m pytest -q` 通过，32 passed |
-| 11 | 全量验证、代码走读文档和审查准备 | ✅ 已完成 | 后端 32 passed；前端 6 passed；`npm run build` 通过；已生成 `智能食谱助手代码走读.md` |
+| 10B | 前端回复卡片展示层级修正 | ✅ 已完成 | 组件测试 5 passed；前端全量 11 passed；`npm run build` 通过；已更新代码走读 |
+| 11 | 全量验证、代码走读文档和审查准备 | ✅ 已完成 | Task 10B 已完成前端验证和代码走读更新 |
 
 ## 4. 实现任务
 
@@ -1330,6 +1333,138 @@ git add frontend/src/components frontend/src/styles frontend/tests/message-compo
 git commit -m "feat: build chat interface"
 ```
 
+### Task 10B: 前端回复卡片展示层级修正
+
+**Files:**
+- Create: `frontend/src/components/AssistantMessage.vue`
+- Create: `frontend/src/components/AssistantResultBlock.vue`
+- Modify: `frontend/src/components/MessageList.vue`
+- Modify: `frontend/src/components/AssistantMessageTabs.vue`
+- Modify: `frontend/src/styles/app.css`
+- Create: `frontend/tests/assistant-message.spec.ts`
+- Modify: `frontend/tests/assistant-message-tabs.spec.ts`
+- Modify: `智能食谱助手代码走读.md`
+
+- [x] **Step 1: 写无卡片场景失败测试**
+
+```ts
+// frontend/tests/assistant-message.spec.ts
+import { mount } from "@vue/test-utils";
+import { describe, expect, it } from "vitest";
+import AssistantMessage from "../src/components/AssistantMessage.vue";
+
+describe("AssistantMessage", () => {
+  it("renders plain assistant reply without result tabs when there are no cards", () => {
+    const wrapper = mount(AssistantMessage, {
+      props: {
+        message: {
+          role: "assistant",
+          reply: "你好！我是你的食谱助手。",
+          cards: [],
+          toolCalls: [],
+          warnings: [],
+          profileUpdates: [],
+        },
+      },
+    });
+
+    expect(wrapper.text()).toContain("你好！我是你的食谱助手。");
+    expect(wrapper.text()).not.toContain("推荐");
+    expect(wrapper.text()).not.toContain("暂无推荐");
+    expect(wrapper.find(".assistant-result-block").exists()).toBe(false);
+  });
+});
+```
+
+- [x] **Step 2: 运行失败测试**
+
+```bash
+cd frontend
+npm test -- assistant-message.spec.ts
+```
+
+Expected: FAIL，原因是 `AssistantMessage.vue` 尚不存在。
+
+- [x] **Step 3: 写有卡片场景失败测试**
+
+```ts
+// frontend/tests/assistant-message.spec.ts
+it("keeps text reply and renders result block when cards exist", () => {
+  const wrapper = mount(AssistantMessage, {
+    props: {
+      message: {
+        role: "assistant",
+        reply: "好的，我给你 3 个中餐选择。",
+        cards: [
+          {
+            type: "meal",
+            id: "1",
+            title: "Chicken Handi",
+            localizedSummary: "适合配米饭。",
+            imageUrl: "https://img.example/x.jpg",
+            tags: [],
+            ingredients: [{ name: "Chicken", measure: "500g" }],
+          },
+        ],
+        toolCalls: [],
+        warnings: ["本次偏好可能未保存"],
+        profileUpdates: [],
+      },
+    },
+  });
+
+  expect(wrapper.text()).toContain("好的，我给你 3 个中餐选择。");
+  expect(wrapper.text()).toContain("Chicken Handi");
+  expect(wrapper.text()).toContain("本次偏好可能未保存");
+  expect(wrapper.find(".assistant-result-block").exists()).toBe(true);
+});
+```
+
+- [x] **Step 4: 实现最小展示组件**
+
+实现要点：
+
+1. `MessageList.vue` 对 `assistant` 消息渲染 `AssistantMessage.vue`，不再直接渲染 `AssistantMessageTabs.vue`。
+2. `AssistantMessage.vue` 始终展示 `message.reply` 和 `message.error`；`message.cards.length > 0` 时才渲染 `AssistantResultBlock.vue`。
+3. `AssistantResultBlock.vue` 复用 `MealCard.vue`、`CocktailCard.vue`、`ToolTracePanel.vue`、`ProfilePanel.vue`，结果区内部可以保留轻量视图切换，但不能包裹普通文本回复。
+4. `AssistantMessageTabs.vue` 若继续保留，只作为兼容包装或被 `AssistantResultBlock.vue` 替代，不再承担整条 Agent 消息容器职责。
+
+- [x] **Step 5: 运行组件测试**
+
+```bash
+cd frontend
+npm test -- assistant-message.spec.ts assistant-message-tabs.spec.ts cards.spec.ts
+```
+
+Expected: PASS。
+
+- [x] **Step 6: 运行前端全量验证**
+
+```bash
+cd frontend
+npm test -- --run
+npm run build
+```
+
+Expected: PASS。
+
+- [x] **Step 7: 更新代码走读文档**
+
+在 `智能食谱助手代码走读.md` 中补充前端展示层级变更：
+
+1. `AssistantMessage.vue` 是 Agent 文本消息入口。
+2. `AssistantResultBlock.vue` 只在 `cards` 非空时展示。
+3. 无卡片普通回复不会出现推荐空容器。
+
+- [x] **Step 8: 记录本次不提交**
+
+本次不执行 `git commit`：当前工作区已有多项既有未提交改动，且用户未要求提交。需要提交时，可在审查后按实际文件范围手动执行：
+
+```bash
+git add frontend/src/components frontend/src/styles/app.css frontend/tests/assistant-message.spec.ts frontend/tests/assistant-message-tabs.spec.ts 智能食谱助手代码走读.md 智能食谱助手需求分析.md 智能食谱助手技术设计.md docs/superpowers/plans/2026-06-14-smart-recipe-assistant.md
+git commit -m "fix: adjust assistant result card hierarchy"
+```
+
 ### Task 11: 全量验证、代码走读文档和审查准备
 
 **Files:**
@@ -1437,8 +1572,8 @@ npm run dev -- --host 127.0.0.1 --port 5173
 
 | 检查项 | 结果 |
 |--------|------|
-| Spec 覆盖 | 覆盖需求 v0.25 的 Agent、3 个 Tool、多轮、结构化展示、语言转换、轻量画像、推荐历史、本地 JSON、单活跃锁、SSE、日志安全和错误降级 |
-| 技术设计覆盖 | 覆盖技术设计 v0.23 的后端分层、Vue 前端、ToolRunner、ReAct 预算熔断、SSE 事件顺序、`done.warnings`、DeepSeek 配置和禁酒硬过滤 |
+| Spec 覆盖 | 覆盖需求 v0.26 的 Agent、3 个 Tool、多轮、结构化展示、语言转换、轻量画像、推荐历史、本地 JSON、单活跃锁、SSE、日志安全、错误降级和前端回复层级 |
+| 技术设计覆盖 | 覆盖技术设计 v0.26 的后端分层、Vue 前端、ToolRunner、ReAct 预算熔断、SSE 事件顺序、`done.warnings`、DeepSeek 配置、禁酒硬过滤和按需结构化结果区 |
 | 待定内容扫描 | 未使用待定标记或未定义的实现语句 |
 | 类型一致性 | 计划中的 `TasteProfile`、`RecommendationRecord`、`MealCard`、`CocktailCard`、`Card`、`SseEvent` 与技术设计命名保持一致 |
 | 简单性检查 | 首版不引入数据库、账号、多 session、WebSocket 或非流式 Chat 接口 |

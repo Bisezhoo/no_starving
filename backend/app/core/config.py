@@ -10,6 +10,8 @@ class Settings(BaseSettings):
     openrouter_base_url: str = Field("https://openrouter.ai/api/v1", alias="OPENROUTER_BASE_URL")
     mealdb_base_url: str = Field("https://www.themealdb.com/api/json/v1/1", alias="MEALDB_BASE_URL")
     cocktaildb_base_url: str = Field("https://www.thecocktaildb.com/api/json/v1/1", alias="COCKTAILDB_BASE_URL")
+    outbound_http_proxy: str | None = Field(None, alias="OUTBOUND_HTTP_PROXY")
+    outbound_http_trust_env: bool = Field(True, alias="OUTBOUND_HTTP_TRUST_ENV")
     agent_max_tool_calls: int = Field(6, alias="AGENT_MAX_TOOL_CALLS")
     agent_max_llm_steps: int = Field(4, alias="AGENT_MAX_LLM_STEPS")
     log_full_system_prompt: bool = Field(False, alias="LOG_FULL_SYSTEM_PROMPT")
@@ -24,3 +26,11 @@ class Settings(BaseSettings):
         if not value or not value.strip():
             raise ValueError(f"{info.field_name.upper()} is required")
         return value.strip()
+
+    @field_validator("outbound_http_proxy")
+    @classmethod
+    def blank_proxy_to_none(cls, value: str | None):
+        if value is None:
+            return None
+        value = value.strip()
+        return value or None

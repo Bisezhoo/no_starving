@@ -1,0 +1,326 @@
+<style>
+  .compare-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+  }
+
+  .chat-shell {
+    border: 1px solid #d8e1dc;
+    background: #fff;
+    min-height: 560px;
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+  }
+
+  .chat-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 16px;
+    border-bottom: 1px solid #d8e1dc;
+  }
+
+  .chat-top strong {
+    font-size: 17px;
+  }
+
+  .status {
+    background: #28795b;
+    color: #fff;
+    border-radius: 999px;
+    padding: 4px 10px;
+    font-size: 12px;
+  }
+
+  .chat-body {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .bubble {
+    max-width: 78%;
+    padding: 10px 12px;
+    border-radius: 8px;
+    line-height: 1.55;
+    font-size: 14px;
+  }
+
+  .bubble.user {
+    align-self: flex-end;
+    background: #dcefed;
+  }
+
+  .assistant-text {
+    align-self: stretch;
+    line-height: 1.65;
+    font-size: 14px;
+    color: #1f2a33;
+  }
+
+  .wrong-tabs,
+  .result-block {
+    border: 1px solid #d8e1dc;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #fff;
+  }
+
+  .wrong-tabs {
+    align-self: stretch;
+  }
+
+  .tab-row {
+    display: flex;
+    gap: 2px;
+    background: #edf2ef;
+    border-bottom: 1px solid #d8e1dc;
+    overflow: hidden;
+  }
+
+  .tab-row span {
+    padding: 9px 11px;
+    font-size: 13px;
+    color: #41514b;
+    white-space: nowrap;
+  }
+
+  .tab-row span:first-child {
+    background: #fff;
+    color: #182026;
+    box-shadow: inset 0 -2px 0 #28795b;
+  }
+
+  .panel {
+    padding: 12px;
+    line-height: 1.55;
+    font-size: 14px;
+  }
+
+  .result-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px;
+    background: #edf2ef;
+    border-bottom: 1px solid #d8e1dc;
+  }
+
+  .result-title strong {
+    font-size: 14px;
+  }
+
+  .mini-tabs {
+    display: flex;
+    gap: 6px;
+  }
+
+  .mini-tabs span {
+    border: 1px solid #c9d4cf;
+    border-radius: 999px;
+    padding: 3px 8px;
+    font-size: 12px;
+    background: #fff;
+  }
+
+  .card-stack {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .recipe-card {
+    border: 1px solid #d8e1dc;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #fff;
+  }
+
+  .thumb {
+    height: 74px;
+    background:
+      linear-gradient(135deg, rgba(40, 121, 91, 0.18), rgba(232, 143, 75, 0.25)),
+      #f6f3ee;
+  }
+
+  .recipe-body {
+    padding: 9px;
+  }
+
+  .recipe-body h4 {
+    margin: 0 0 5px;
+    font-size: 13px;
+  }
+
+  .recipe-body p {
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.45;
+    color: #66746e;
+  }
+
+  .composer-mini {
+    border-top: 1px solid #d8e1dc;
+    padding: 12px;
+    display: flex;
+    gap: 10px;
+  }
+
+  .input-mini {
+    flex: 1;
+    border: 1px solid #c9d4cf;
+    border-radius: 8px;
+    color: #7a8680;
+    padding: 10px 12px;
+  }
+
+  .send-mini {
+    width: 42px;
+    border-radius: 8px;
+    background: #9aa8a1;
+  }
+
+  .notes {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-top: 18px;
+  }
+
+  .note {
+    border: 1px solid #d8e1dc;
+    border-radius: 8px;
+    padding: 12px;
+    background: #fbfcfb;
+  }
+
+  .note strong {
+    display: block;
+    margin-bottom: 6px;
+  }
+
+  @media (max-width: 900px) {
+    .compare-grid,
+    .notes {
+      grid-template-columns: 1fr;
+    }
+
+    .card-stack {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+<h2>回复卡片层级确认</h2>
+<p class="subtitle">左侧复现当前问题；右侧是推荐调整。请重点看：普通回复是否还应该被页签包住，以及推荐结果是否只在有结构化卡片数据时出现。</p>
+
+<div class="cards compare-grid">
+  <div class="card" data-choice="a-current" onclick="toggleSelect(this)">
+    <div class="card-body">
+      <h3>A. 当前层级：整条 assistant 消息进入页签容器</h3>
+      <div class="chat-shell">
+        <div class="chat-top">
+          <strong>智能食谱助手</strong>
+          <span class="status">就绪</span>
+        </div>
+        <div class="chat-body">
+          <div class="bubble user">你是谁？</div>
+          <div class="wrong-tabs">
+            <div class="tab-row">
+              <span>回复</span><span>推荐</span><span>食材/步骤</span><span>Tool 调用</span><span>画像变化</span>
+            </div>
+            <div class="panel">
+              你好！我是你的食谱助手。这里本来只是普通介绍，但因为 assistant 消息统一套了页签，所以视觉层级过重。
+            </div>
+          </div>
+          <div class="bubble user">帮我推荐一个中餐</div>
+          <div class="wrong-tabs">
+            <div class="tab-row">
+              <span>回复</span><span>推荐</span><span>食材/步骤</span><span>Tool 调用</span><span>画像变化</span>
+            </div>
+            <div class="panel">
+              好的！为您推荐以下 3 道中餐美食：### 1 陈麻香橙鸡 ### 2 番茄炒蛋 ### 3 川式干煸长豆角。结果数据没有真正转换成结果卡片，文本和容器层级混在一起。
+            </div>
+          </div>
+        </div>
+        <div class="composer-mini">
+          <div class="input-mini">想吃什么？</div>
+          <div class="send-mini"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" data-choice="b-recommended" onclick="toggleSelect(this)">
+    <div class="card-body">
+      <h3>B. 推荐层级：文本照常输出，结构化结果才卡片化</h3>
+      <div class="chat-shell">
+        <div class="chat-top">
+          <strong>智能食谱助手</strong>
+          <span class="status">就绪</span>
+        </div>
+        <div class="chat-body">
+          <div class="bubble user">你是谁？</div>
+          <div class="assistant-text">
+            你好！我是你的食谱助手，可以帮你找菜谱、配饮品、整理食材和步骤。你可以直接说“推荐一个中餐”。
+          </div>
+          <div class="bubble user">帮我推荐一个中餐</div>
+          <div class="assistant-text">
+            好的，我先给你 3 个偏家常、容易接受的中餐选择。你可以点其中一道继续看食材和步骤。
+          </div>
+          <div class="result-block">
+            <div class="result-title">
+              <strong>推荐结果</strong>
+              <div class="mini-tabs"><span>菜品</span><span>步骤</span><span>Tool</span></div>
+            </div>
+            <div class="card-stack">
+              <div class="recipe-card">
+                <div class="thumb"></div>
+                <div class="recipe-body">
+                  <h4>陈麻香橙鸡</h4>
+                  <p>鸡肉、橙汁、酱油。适合配米饭。</p>
+                </div>
+              </div>
+              <div class="recipe-card">
+                <div class="thumb"></div>
+                <div class="recipe-body">
+                  <h4>番茄炒蛋</h4>
+                  <p>番茄、鸡蛋、葱花。酸甜快手。</p>
+                </div>
+              </div>
+              <div class="recipe-card">
+                <div class="thumb"></div>
+                <div class="recipe-body">
+                  <h4>川式干煸长豆角</h4>
+                  <p>长豆角、花椒、干辣椒。麻辣下饭。</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="composer-mini">
+          <div class="input-mini">想吃什么？</div>
+          <div class="send-mini"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="notes">
+  <div class="note">
+    <strong>触发规则</strong>
+    普通 `delta` / `done.reply` 只进入文本区；只有收到 `card` 事件或 `done.cards.length > 0` 时才出现结构化结果区块。
+  </div>
+  <div class="note">
+    <strong>组件边界</strong>
+    `MessageList` 不再把所有 assistant 消息交给页签组件；改为 assistant 消息组件内部按数据片段决定展示方式。
+  </div>
+  <div class="note">
+    <strong>测试标准</strong>
+    无卡片时不渲染“推荐/食材/Tool/画像”外框；有卡片时文本仍保留，卡片结果独立展示，警告不清空已有内容。
+  </div>
+</div>
