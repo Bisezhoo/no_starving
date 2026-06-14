@@ -95,7 +95,7 @@
 | 序号 | 任务 | 状态 | 备注 |
 |------|------|------|------|
 | 1 | 后端脚手架、配置、统一错误和 SSE 基础 | ✅ 已完成 | `.venv/bin/python -m pytest tests/unit/test_config.py tests/unit/test_sse.py tests/integration/test_health.py -q` 通过，4 passed |
-| 2 | 后端领域模型、语言检测和数据标准化 | ⏳ 待执行 | 覆盖外部 API 空值、食材/用量、步骤拆分 |
+| 2 | 后端领域模型、语言检测和数据标准化 | ✅ 已完成 | `.venv/bin/python -m pytest tests/unit/test_config.py tests/unit/test_sse.py tests/integration/test_health.py tests/unit/test_language.py tests/unit/test_normalizers.py -q` 通过，7 passed |
 | 3 | Tool 参数英文归一化、来源追踪和防幻觉校验 | ⏳ 待执行 | 覆盖中文入参、allowlist、ID 来源、修正失败 |
 | 4 | 外部 API Adapter 与 3 个 Tool | ⏳ 待执行 | 覆盖端点选择、limit 截取、lookup 补详情 |
 | 5 | 本地 JSON 持久化、画像、推荐历史和单活跃锁 | ⏳ 待执行 | 覆盖损坏文件、写入失败、锁释放 |
