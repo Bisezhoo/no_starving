@@ -1,5 +1,450 @@
 [
   {
+    "category": "Seafood",
+    "cuisine": "Italy",
+    "itemId": "52777",
+    "itemType": "meal",
+    "mainIngredients": [
+      "mozzarella balls",
+      "baby plum tomatoes",
+      "fresh basil",
+      "farfalle",
+      "extra virgin olive oil",
+      "green olives",
+      "tuna",
+      "salt",
+      "pepper"
+    ],
+    "matchReasons": [],
+    "recommendedAt": "2026-06-14T14:58:26.965958+00:00",
+    "title": "Mediterranean Pasta Salad"
+  },
+  {
+    "category": "Vegetarian",
+    "cuisine": "Tunisia",
+    "itemId": "52973",
+    "itemType": "meal",
+    "mainIngredients": [
+      "olive oil",
+      "onion",
+      "chickpeas",
+      "vegetable stock",
+      "cumin",
+      "garlic",
+      "salt",
+      "harissa spice",
+      "pepper",
+      "lime"
+    ],
+    "matchReasons": [
+      "recent_main_ingredient_downrank"
+    ],
+    "recommendedAt": "2026-06-14T14:58:26.965958+00:00",
+    "title": "Leblebi Soup"
+  },
+  {
+    "category": "Beef",
+    "cuisine": "Jamaica",
+    "itemId": "52941",
+    "itemType": "meal",
+    "mainIngredients": [
+      "kidney beans",
+      "carrots",
+      "spring onions",
+      "thyme",
+      "onion",
+      "black pepper",
+      "red pepper",
+      "garlic clove",
+      "allspice",
+      "beef",
+      "water",
+      "potatoes",
+      "plain flour",
+      "water",
+      "coconut milk"
+    ],
+    "matchReasons": [
+      "recent_main_ingredient_downrank"
+    ],
+    "recommendedAt": "2026-06-14T14:58:26.965958+00:00",
+    "title": "Red Peas Soup"
+  },
+  {
+    "category": "Vegetarian",
+    "cuisine": "China",
+    "itemId": "52955",
+    "itemType": "meal",
+    "mainIngredients": [
+      "chicken stock",
+      "salt",
+      "sugar",
+      "pepper",
+      "sesame seed oil",
+      "peas",
+      "mushrooms",
+      "cornstarch",
+      "water",
+      "spring onions"
+    ],
+    "matchReasons": [
+      "recent_main_ingredient_downrank"
+    ],
+    "recommendedAt": "2026-06-14T14:58:26.965958+00:00",
+    "title": "Egg Drop Soup"
+  },
+  {
+    "category": "Seafood",
+    "cuisine": "Russia",
+    "itemId": "53079",
+    "itemType": "meal",
+    "mainIngredients": [
+      "olive oil",
+      "onion",
+      "carrots",
+      "fish stock",
+      "water",
+      "potatoes",
+      "bay leaf",
+      "cod",
+      "salmon"
+    ],
+    "matchReasons": [
+      "recent_main_ingredient_downrank"
+    ],
+    "recommendedAt": "2026-06-14T14:58:26.965958+00:00",
+    "title": "Fish Soup (Ukha)"
+  },
+  {
+    "category": "Side",
+    "cuisine": "Canada",
+    "itemId": "52925",
+    "itemType": "meal",
+    "mainIngredients": [
+      "ham",
+      "peas",
+      "onions",
+      "carrots",
+      "bay leaves",
+      "celery",
+      "frozen peas",
+      "bread"
+    ],
+    "matchReasons": [
+      "recent_main_ingredient_downrank"
+    ],
+    "recommendedAt": "2026-06-14T14:58:26.965958+00:00",
+    "title": "Split Pea Soup"
+  },
+  {
+    "category": "Beef",
+    "cuisine": "United Kingdom",
+    "itemId": "52878",
+    "itemType": "meal",
+    "mainIngredients": [
+      "beef",
+      "olive oil",
+      "shallots",
+      "garlic",
+      "bacon",
+      "thyme",
+      "bay leaf",
+      "stout",
+      "beef stock",
+      "corn flour",
+      "oysters",
+      "plain flour",
+      "salt",
+      "butter",
+      "eggs"
+    ],
+    "matchReasons": [
+      "liked_ingredient_match",
+      "recent_main_ingredient_downrank"
+    ],
+    "recommendedAt": "2026-06-14T15:30:47.494896+00:00",
+    "title": "Beef and Oyster pie"
+  },
+  {
+    "category": "Beef",
+    "cuisine": "Venezuela",
+    "itemId": "53329",
+    "itemType": "meal",
+    "mainIngredients": [
+      "beef",
+      "onion",
+      "red pepper",
+      "garlic",
+      "cumin",
+      "oregano",
+      "paprika",
+      "beef stock",
+      "water",
+      "salt",
+      "cheese",
+      "extra virgin olive oil"
+    ],
+    "matchReasons": [
+      "liked_ingredient_match",
+      "recent_main_ingredient_downrank"
+    ],
+    "recommendedAt": "2026-06-14T15:30:47.494896+00:00",
+    "title": "Arepa pelua"
+  },
+  {
+    "category": "Beef",
+    "cuisine": "United Kingdom",
+    "itemId": "52874",
+    "itemType": "meal",
+    "mainIngredients": [
+      "beef",
+      "plain flour",
+      "rapeseed oil",
+      "red wine",
+      "beef stock",
+      "onion",
+      "carrots",
+      "thyme",
+      "mustard",
+      "egg yolks",
+      "puff pastry",
+      "green beans",
+      "butter",
+      "salt",
+      "pepper"
+    ],
+    "matchReasons": [
+      "liked_ingredient_match",
+      "recent_main_ingredient_downrank"
+    ],
+    "recommendedAt": "2026-06-14T15:30:47.494896+00:00",
+    "title": "Beef and Mustard Pie"
+  },
+  {
+    "category": "Beef",
+    "cuisine": "Philippines",
+    "itemId": "53071",
+    "itemType": "meal",
+    "mainIngredients": [
+      "beef",
+      "beef stock concentrate",
+      "tomato puree",
+      "water",
+      "soy sauce",
+      "white wine vinegar",
+      "pepper",
+      "bay leaf",
+      "lemon",
+      "tomato sauce",
+      "butter",
+      "olive oil",
+      "onion",
+      "garlic"
+    ],
+    "matchReasons": [
+      "liked_ingredient_match",
+      "recent_main_ingredient_downrank"
+    ],
+    "recommendedAt": "2026-06-14T15:30:47.494896+00:00",
+    "title": "Beef Asado"
+  },
+  {
+    "category": "Beef",
+    "cuisine": "Philippines",
+    "itemId": "53070",
+    "itemType": "meal",
+    "mainIngredients": [
+      "beef",
+      "beef stock",
+      "soy sauce",
+      "water",
+      "green pepper",
+      "red pepper",
+      "potatoes",
+      "carrots",
+      "tomato puree",
+      "peanut butter",
+      "chilli powder",
+      "onion",
+      "garlic",
+      "olive oil"
+    ],
+    "matchReasons": [
+      "liked_ingredient_match",
+      "recent_main_ingredient_downrank"
+    ],
+    "recommendedAt": "2026-06-14T15:30:47.494896+00:00",
+    "title": "Beef Caldereta"
+  },
+  {
+    "category": "Beef",
+    "cuisine": "China",
+    "itemId": "52952",
+    "itemType": "meal",
+    "mainIngredients": [
+      "beef",
+      "salt",
+      "pepper",
+      "sesame seed oil",
+      "egg",
+      "starch",
+      "oil",
+      "noodles",
+      "onion",
+      "minced garlic",
+      "ginger",
+      "bean sprouts",
+      "mushrooms",
+      "water",
+      "oyster sauce",
+      "sugar",
+      "soy sauce"
+    ],
+    "matchReasons": [
+      "recent_main_ingredient_downrank",
+      "liked_ingredient_match",
+      "recent_item_hard_dedupe"
+    ],
+    "recommendedAt": "2026-06-14T15:30:47.494896+00:00",
+    "title": "Beef Lo Mein"
+  },
+  {
+    "category": "Vegetarian",
+    "cuisine": "China",
+    "itemId": "53372",
+    "itemType": "meal",
+    "mainIngredients": [
+      "plum tomatoes",
+      "vegetable oil",
+      "eggs",
+      "sesame seed oil",
+      "chicken bouillon powder",
+      "sugar",
+      "pepper",
+      "salt",
+      "spring onions",
+      "jasmine rice"
+    ],
+    "matchReasons": [
+      "recent_main_ingredient_downrank",
+      "liked_ingredient_match",
+      "recent_item_hard_dedupe"
+    ],
+    "recommendedAt": "2026-06-14T15:30:47.494896+00:00",
+    "title": "Chinese Tomato Egg Stir Fry"
+  },
+  {
+    "category": "Side",
+    "cuisine": "China",
+    "itemId": "53373",
+    "itemType": "meal",
+    "mainIngredients": [
+      "olive oil",
+      "ground pork",
+      "garlic",
+      "ginger",
+      "carrots",
+      "scallions",
+      "cabbage",
+      "soy sauce",
+      "rice vinegar",
+      "egg roll wrappers",
+      "oil",
+      "duck sauce",
+      "plum sauce",
+      "soy sauce"
+    ],
+    "matchReasons": [
+      "recent_main_ingredient_downrank",
+      "liked_ingredient_match",
+      "recent_item_hard_dedupe"
+    ],
+    "recommendedAt": "2026-06-14T15:30:47.494896+00:00",
+    "title": "Air Fryer Egg Rolls"
+  },
+  {
+    "category": "Beef",
+    "cuisine": "China",
+    "itemId": "53366",
+    "itemType": "meal",
+    "mainIngredients": [
+      "soy sauce",
+      "dry sherry",
+      "cornstarch",
+      "black pepper",
+      "sirloin steak",
+      "oyster sauce",
+      "dry sherry",
+      "soy sauce",
+      "chicken stock",
+      "broccoli",
+      "high heat cooking oil",
+      "garlic",
+      "cornstarch",
+      "water"
+    ],
+    "matchReasons": [
+      "recent_main_ingredient_downrank",
+      "liked_ingredient_match",
+      "recent_item_hard_dedupe"
+    ],
+    "recommendedAt": "2026-06-14T15:30:47.494896+00:00",
+    "title": "Beef and Broccoli Stir-Fry"
+  },
+  {
+    "category": "Chicken",
+    "cuisine": "China",
+    "itemId": "52956",
+    "itemType": "meal",
+    "mainIngredients": [
+      "chicken",
+      "salt",
+      "pepper",
+      "ginger cordial",
+      "ginger",
+      "spring onions",
+      "rice",
+      "water",
+      "coriander"
+    ],
+    "matchReasons": [
+      "recent_main_ingredient_downrank",
+      "liked_ingredient_match",
+      "recent_item_hard_dedupe"
+    ],
+    "recommendedAt": "2026-06-14T15:30:47.494896+00:00",
+    "title": "Chicken Congee"
+  },
+  {
+    "category": "Chicken",
+    "cuisine": "China",
+    "itemId": "53367",
+    "itemType": "meal",
+    "mainIngredients": [
+      "chicken thighs",
+      "salt",
+      "canola oil",
+      "egg",
+      "onion",
+      "garlic",
+      "ground ginger",
+      "carrots",
+      "peas",
+      "jasmine rice",
+      "scallions",
+      "chinese five spice powder",
+      "soy sauce",
+      "sesame seed oil"
+    ],
+    "matchReasons": [
+      "recent_main_ingredient_downrank",
+      "liked_ingredient_match",
+      "recent_item_hard_dedupe"
+    ],
+    "recommendedAt": "2026-06-14T15:30:47.494896+00:00",
+    "title": "Chicken Fried Rice"
+  },
+  {
     "category": "Chicken",
     "cuisine": "China",
     "itemId": "53365",
@@ -26,307 +471,79 @@
       "sesame seed",
       "rice"
     ],
-    "matchReasons": [],
-    "recommendedAt": "2026-06-14T11:45:05.519894+00:00",
+    "matchReasons": [
+      "recent_main_ingredient_downrank",
+      "liked_ingredient_match",
+      "recent_item_hard_dedupe"
+    ],
+    "recommendedAt": "2026-06-14T15:30:47.494896+00:00",
     "title": "Chinese Orange Chicken"
   },
   {
-    "category": "Vegetarian",
+    "category": "Seafood",
     "cuisine": "China",
-    "itemId": "53372",
+    "itemId": "53370",
     "itemType": "meal",
     "mainIngredients": [
-      "plum tomatoes",
-      "vegetable oil",
-      "eggs",
-      "sesame seed oil",
-      "chicken bouillon powder",
-      "sugar",
+      "unsalted beef stock",
+      "soy sauce",
+      "shaoxing wine",
+      "oyster sauce",
       "pepper",
-      "salt",
+      "cornstarch",
+      "water",
+      "cornstarch",
+      "water",
+      "egg",
+      "kosher salt",
+      "sugar",
       "spring onions",
+      "mung bean sprouts",
+      "shrimp",
+      "vegetable oil",
       "jasmine rice"
     ],
-    "matchReasons": [],
-    "recommendedAt": "2026-06-14T11:45:05.519894+00:00",
-    "title": "Chinese Tomato Egg Stir Fry"
+    "matchReasons": [
+      "recent_main_ingredient_downrank",
+      "liked_ingredient_match",
+      "recent_item_hard_dedupe"
+    ],
+    "recommendedAt": "2026-06-14T15:30:47.494896+00:00",
+    "title": "Egg Foo Young"
   },
   {
-    "category": "Vegetarian",
+    "category": "Chicken",
     "cuisine": "China",
-    "itemId": "53371",
+    "itemId": "52951",
     "itemType": "meal",
     "mainIngredients": [
-      "chinese long beans",
-      "peanut oil",
-      "dried chillies",
-      "sichuan pepper",
-      "salt",
-      "sugar",
-      "sesame seed oil",
-      "soy sauce"
-    ],
-    "matchReasons": [],
-    "recommendedAt": "2026-06-14T11:45:05.519894+00:00",
-    "title": "Sichuan Style Stir-Fried Chinese Long Beans"
-  },
-  {
-    "category": "Chicken",
-    "cuisine": "United States",
-    "itemId": "53085",
-    "itemType": "meal",
-    "mainIngredients": [
-      "chicken breasts",
-      "oil",
-      "hotsauce",
-      "lemon juice",
-      "buns",
-      "cheese",
-      "cabbage",
-      "mayonnaise",
-      "sour cream",
-      "lettuce",
-      "red pepper"
-    ],
-    "matchReasons": [
-      "recent_main_ingredient_downrank"
-    ],
-    "recommendedAt": "2026-06-14T12:51:11.014224+00:00",
-    "title": "15-minute chicken & halloumi burgers"
-  },
-  {
-    "category": "Chicken",
-    "cuisine": "Bangladesh",
-    "itemId": "53453",
-    "itemType": "meal",
-    "mainIngredients": [
-      "olive oil",
-      "onion",
-      "ginger garlic paste",
-      "tomato",
-      "cayenne pepper",
-      "curry powder",
-      "garam masala",
-      "ground turmeric",
-      "ground cumin",
       "chicken breast",
-      "red potatoes",
-      "cilantro"
-    ],
-    "matchReasons": [
-      "recent_main_ingredient_downrank"
-    ],
-    "recommendedAt": "2026-06-14T12:51:11.014224+00:00",
-    "title": "Bengali Chicken Curry with Potatoes"
-  },
-  {
-    "category": "Chicken",
-    "cuisine": "Malaysia",
-    "itemId": "53050",
-    "itemType": "meal",
-    "mainIngredients": [
-      "chicken thighs",
-      "challots",
-      "ginger",
-      "garlic clove",
-      "cayenne pepper",
-      "turmeric",
-      "cumin",
-      "coriander",
-      "fennel",
-      "tamarind paste",
-      "coconut milk",
-      "sugar",
-      "water"
-    ],
-    "matchReasons": [
-      "recent_main_ingredient_downrank"
-    ],
-    "recommendedAt": "2026-06-14T12:51:11.014224+00:00",
-    "title": "Ayam Percik"
-  },
-  {
-    "category": "Pasta",
-    "cuisine": "Italy",
-    "itemId": "52839",
-    "itemType": "meal",
-    "mainIngredients": [
-      "linguine pasta",
-      "sugar snap peas",
-      "olive oil",
-      "garlic clove",
-      "red chilli",
-      "king prawns",
-      "cherry tomatoes",
-      "basil leaves",
-      "lettuce",
-      "bread",
-      "fromage frais",
-      "lime",
-      "caster sugar"
-    ],
-    "matchReasons": [
-      "recent_main_ingredient_downrank"
-    ],
-    "recommendedAt": "2026-06-14T12:51:11.014224+00:00",
-    "title": "Chilli prawn linguine"
-  },
-  {
-    "category": "Dessert",
-    "cuisine": "Italy",
-    "itemId": "52961",
-    "itemType": "meal",
-    "mainIngredients": [
-      "ricotta",
-      "eggs",
-      "flour",
-      "sugar",
-      "cinnamon",
-      "lemons",
-      "dark rum",
-      "icing sugar"
-    ],
-    "matchReasons": [
-      "recent_main_ingredient_downrank"
-    ],
-    "recommendedAt": "2026-06-14T12:51:11.014224+00:00",
-    "title": "Budino Di Ricotta"
-  },
-  {
-    "category": "Chicken",
-    "cuisine": "Italy",
-    "itemId": "52796",
-    "itemType": "meal",
-    "mainIngredients": [
-      "butter",
-      "olive oil",
-      "chicken",
+      "plain flour",
+      "egg",
+      "starch",
+      "baking powder",
       "salt",
-      "squash",
-      "broccoli",
-      "mushrooms",
-      "pepper",
-      "onion",
-      "garlic",
-      "red pepper flakes",
-      "white wine",
-      "milk",
-      "heavy cream",
-      "parmesan cheese",
-      "bowtie pasta",
-      "salt",
-      "pepper",
-      "parsley"
-    ],
-    "matchReasons": [
-      "recent_main_ingredient_downrank"
-    ],
-    "recommendedAt": "2026-06-14T12:51:11.014224+00:00",
-    "title": "Chicken Alfredo Primavera"
-  },
-  {
-    "category": "Homemade Liqueur",
-    "cuisine": null,
-    "itemId": "12800",
-    "itemType": "cocktail",
-    "mainIngredients": [
+      "onion salt",
+      "garlic powder",
       "water",
-      "sugar",
-      "coffee",
-      "vanilla",
-      "vodka",
-      "caramel coloring"
+      "chicken stock",
+      "duck sauce",
+      "soy sauce",
+      "honey",
+      "rice vinegar",
+      "sesame seed oil",
+      "gochujang",
+      "starch",
+      "garlic",
+      "spring onions",
+      "ginger"
     ],
     "matchReasons": [
-      "recent_main_ingredient_downrank"
+      "recent_main_ingredient_downrank",
+      "liked_ingredient_match",
+      "recent_item_hard_dedupe"
     ],
-    "recommendedAt": "2026-06-14T12:51:11.014224+00:00",
-    "title": "Coffee-Vodka"
-  },
-  {
-    "category": "Homemade Liqueur",
-    "cuisine": null,
-    "itemId": "12854",
-    "itemType": "cocktail",
-    "mainIngredients": [
-      "johnnie walker",
-      "honey",
-      "angelica root",
-      "fennel seeds",
-      "lemon peel"
-    ],
-    "matchReasons": [],
-    "recommendedAt": "2026-06-14T13:18:54.791724+00:00",
-    "title": "Scottish Highland Liqueur"
-  },
-  {
-    "category": "Vegetarian",
-    "cuisine": "Thailand",
-    "itemId": "53210",
-    "itemType": "meal",
-    "mainIngredients": [
-      "pumpkin",
-      "sunflower oil",
-      "onion",
-      "ginger",
-      "lemongrass",
-      "thai red curry paste",
-      "coconut milk",
-      "vegetable stock",
-      "lime juice",
-      "sugar",
-      "red chilli"
-    ],
-    "matchReasons": [],
-    "recommendedAt": "2026-06-14T13:41:32.440876+00:00",
-    "title": "Thai pumpkin soup"
-  },
-  {
-    "category": "Shot",
-    "cuisine": null,
-    "itemId": "13068",
-    "itemType": "cocktail",
-    "mainIngredients": [
-      "tequila",
-      "tabasco sauce"
-    ],
-    "matchReasons": [],
-    "recommendedAt": "2026-06-14T13:41:32.440876+00:00",
-    "title": "Brave Bull Shooter"
-  },
-  {
-    "category": "Seafood",
-    "cuisine": "Italy",
-    "itemId": "52777",
-    "itemType": "meal",
-    "mainIngredients": [
-      "mozzarella balls",
-      "baby plum tomatoes",
-      "fresh basil",
-      "farfalle",
-      "extra virgin olive oil",
-      "green olives",
-      "tuna",
-      "salt",
-      "pepper"
-    ],
-    "matchReasons": [],
-    "recommendedAt": "2026-06-14T13:45:14.662217+00:00",
-    "title": "Mediterranean Pasta Salad"
-  },
-  {
-    "category": "Cocktail",
-    "cuisine": null,
-    "itemId": "12562",
-    "itemType": "cocktail",
-    "mainIngredients": [
-      "grenadine",
-      "orange juice",
-      "pineapple juice",
-      "cream"
-    ],
-    "matchReasons": [],
-    "recommendedAt": "2026-06-14T13:45:14.662217+00:00",
-    "title": "Alice Cocktail"
+    "recommendedAt": "2026-06-14T15:30:47.494896+00:00",
+    "title": "General Tsos Chicken"
   }
 ]

@@ -1,8 +1,10 @@
 import json
+import logging
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
+from app.core.logging import get_logger, log_event
 from app.domain.models import AssistantChatHistoryMessage, ChatHistoryMessage, UserChatHistoryMessage
 
 
@@ -11,8 +13,9 @@ class ChatHistoryStore:
     MESSAGE_LIMIT = 60
     RETENTION_HOURS = 24
 
-    def __init__(self, data_dir: Path | str):
+    def __init__(self, data_dir: Path | str, logger: logging.Logger | None = None):
         self.data_dir = Path(data_dir)
+        self.logger = logger or get_logger(__name__)
         self.data_dir.mkdir(parents=True, exist_ok=True)
 
     async def load_messages(self, now: datetime | None = None) -> list[ChatHistoryMessage]:
@@ -39,6 +42,12 @@ class ChatHistoryStore:
             self._atomic_write(self.data_dir / self.HISTORY_FILE, payload)
         except Exception as exc:
             warnings.append(f"{self.HISTORY_FILE} 持久化失败: {exc}")
+            log_event(
+                self.logger,
+                "chat_history_write_failed",
+                fields={"fileName": self.HISTORY_FILE, "errorType": type(exc).__name__, "error": str(exc)},
+                level=logging.ERROR,
+            )
         return warnings
 
     def _read_json(self, path: Path, default: Any) -> Any:
@@ -46,7 +55,13 @@ class ChatHistoryStore:
             return default
         try:
             return json.loads(path.read_text(encoding="utf-8"))
-        except Exception:
+        except Exception as exc:
+            log_event(
+                self.logger,
+                "chat_history_read_failed",
+                fields={"fileName": path.name, "errorType": type(exc).__name__, "error": str(exc)},
+                level=logging.WARNING,
+            )
             return default
 
     def _parse_message(self, item: Any) -> ChatHistoryMessage | None:

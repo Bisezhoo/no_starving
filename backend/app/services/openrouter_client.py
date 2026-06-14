@@ -1,9 +1,13 @@
 import json
+import logging
+import time
 from functools import lru_cache
 from pathlib import Path
 from typing import Any, AsyncIterator
 
 import httpx
+
+from app.core.logging import get_logger, log_event
 
 _PROMPTS_PATH = Path(__file__).resolve().parents[1] / "core" / "prompts.json"
 
@@ -22,6 +26,8 @@ class OpenRouterClient:
         timeout_seconds: float = 30,
         proxy: str | None = None,
         trust_env: bool = True,
+        settings: Any | None = None,
+        logger: logging.Logger | None = None,
     ):
         self.api_key = api_key
         self.model = model
@@ -29,8 +35,11 @@ class OpenRouterClient:
         self.timeout_seconds = timeout_seconds
         self.proxy = proxy
         self.trust_env = trust_env
+        self.settings = settings
+        self.logger = logger or get_logger(__name__)
 
     async def stream_chat(self, messages: list[dict[str, Any]], tools: list[dict[str, Any]]) -> AsyncIterator[str]:
+        started = time.perf_counter()
         headers = {
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json",
@@ -41,17 +50,50 @@ class OpenRouterClient:
             "tools": tools,
             "stream": True,
         }
+        log_event(
+            self.logger,
+            "openrouter_request_started",
+            settings=self.settings,
+            fields={
+                "model": self.model,
+                "baseUrl": self.base_url,
+                "messageCount": len(messages),
+                "toolCount": len(tools),
+                "headers": headers,
+            },
+        )
         async with httpx.AsyncClient(
             base_url=self.base_url,
             timeout=self.timeout_seconds,
             proxy=self.proxy,
             trust_env=self.trust_env,
         ) as client:
-            async with client.stream("POST", "chat/completions", headers=headers, json=payload) as response:
-                response.raise_for_status()
-                async for line in response.aiter_lines():
-                    if line:
-                        yield line
+            try:
+                async with client.stream("POST", "chat/completions", headers=headers, json=payload) as response:
+                    response.raise_for_status()
+                    log_event(
+                        self.logger,
+                        "openrouter_request_finished",
+                        settings=self.settings,
+                        fields={
+                            "model": self.model,
+                            "statusCode": getattr(response, "status_code", None),
+                            "durationMs": _duration_ms(started),
+                        },
+                    )
+                    async for line in response.aiter_lines():
+                        if line:
+                            yield line
+            except Exception as exc:
+                log_event(
+                    self.logger,
+                    "openrouter_request_failed",
+                    settings=self.settings,
+                    fields={"model": self.model, "errorType": type(exc).__name__, "error": str(exc), "durationMs": _duration_ms(started)},
+                    level=logging.ERROR,
+                    exc_info=bool(getattr(self.settings, "log_stack_trace", False)),
+                )
+                raise
 
 
 class OpenRouterStepLlm:
@@ -179,3 +221,7 @@ def _finalize_tool_calls(tool_call_deltas: dict[int, dict[str, str]]) -> list[di
             }
         )
     return tool_calls
+
+
+def _duration_ms(started: float) -> int:
+    return int((time.perf_counter() - started) * 1000)

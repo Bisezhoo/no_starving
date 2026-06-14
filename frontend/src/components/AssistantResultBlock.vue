@@ -6,28 +6,49 @@
 
     <div :class="['card-grid', { 'card-slider': isExpanded && hasOverflowCards }]">
       <template v-for="card in visibleCards" :key="card.id">
-        <MealCard v-if="isMealCard(card)" :card="card" />
-        <CocktailCard v-else-if="isCocktailCard(card)" :card="card" />
+        <MealCard v-if="isMealCard(card)" :card="card" @view-detail="openDetail" />
+        <CocktailCard v-else-if="isCocktailCard(card)" :card="card" @view-detail="openDetail" />
       </template>
     </div>
 
+    <p v-if="hasOverflowCards && isExpanded" class="slider-hint">左右滑动查看更多</p>
     <div v-if="hasOverflowCards" class="result-toggle-row">
       <button class="result-toggle" type="button" @click="toggleExpanded">
         {{ isExpanded ? "收起" : "查看更多" }}
       </button>
     </div>
 
-    <div v-if="hasSteps" class="result-section">
-      <article v-for="card in visibleCards" :key="card.id" class="steps-block">
-        <h3>{{ card.title }}</h3>
-        <ul v-if="card.ingredients?.length">
-          <li v-for="ingredient in card.ingredients" :key="ingredient.name">
-            {{ ingredient.name }}<span v-if="ingredient.measure"> · {{ ingredient.measure }}</span>
-          </li>
-        </ul>
-        <ol v-if="stepsFor(card).length">
-          <li v-for="step in stepsFor(card)" :key="step">{{ step }}</li>
-        </ol>
+    <div v-if="selectedCard" class="detail-modal-backdrop" @click.self="closeDetail">
+      <article class="detail-modal" role="dialog" aria-modal="true" :aria-label="`${selectedCard.title} 详情`">
+        <header class="detail-modal-header">
+          <div>
+            <p class="detail-modal-eyebrow">推荐详情</p>
+            <h3>{{ selectedCard.title }}</h3>
+          </div>
+          <button class="detail-modal-close" type="button" @click="closeDetail">关闭</button>
+        </header>
+
+        <p v-if="selectedCard.localizedSummary" class="muted">{{ selectedCard.localizedSummary }}</p>
+
+        <div v-if="detailMetaItems(selectedCard).length" class="meta-row">
+          <span v-for="item in detailMetaItems(selectedCard)" :key="item">{{ item }}</span>
+        </div>
+
+        <section v-if="selectedCard.ingredients?.length" class="detail-section">
+          <h4>食材 / 配料</h4>
+          <ul class="detail-ingredient-list">
+            <li v-for="ingredient in selectedCard.ingredients" :key="ingredient.name">
+              {{ ingredient.name }}<span v-if="ingredient.measure"> · {{ ingredient.measure }}</span>
+            </li>
+          </ul>
+        </section>
+
+        <section v-if="stepsFor(selectedCard).length" class="detail-section">
+          <h4>做法步骤</h4>
+          <ol class="detail-step-list">
+            <li v-for="step in stepsFor(selectedCard)" :key="step">{{ step }}</li>
+          </ol>
+        </section>
       </article>
     </div>
 
@@ -54,6 +75,7 @@ const props = defineProps<{ message: AssistantMessage }>();
 const DEFAULT_VISIBLE_CARD_COUNT = 3;
 
 const isExpanded = ref(false);
+const selectedCard = ref<Card | null>(null);
 const hasOverflowCards = computed(() => props.message.cards.length > DEFAULT_VISIBLE_CARD_COUNT);
 const visibleCards = computed(() => isExpanded.value || !hasOverflowCards.value
   ? props.message.cards
@@ -66,5 +88,19 @@ const toggleExpanded = () => {
 const isMealCard = (card: Card): card is MealCardType => card.type === "meal";
 const isCocktailCard = (card: Card): card is CocktailCardType => card.type === "cocktail";
 const stepsFor = (card: Card) => card.localizedInstructions?.length ? card.localizedInstructions : card.instructions ?? [];
-const hasSteps = computed(() => visibleCards.value.some((card) => card.ingredients?.length || stepsFor(card).length));
+const detailMetaItems = (card: Card) => {
+  if (isMealCard(card)) {
+    return [card.category, card.country].filter(Boolean);
+  }
+
+  return [card.category, card.alcoholic, card.glass].filter(Boolean);
+};
+
+const openDetail = (card: Card) => {
+  selectedCard.value = card;
+};
+
+const closeDetail = () => {
+  selectedCard.value = null;
+};
 </script>

@@ -40,6 +40,7 @@ describe("cards", () => {
     });
 
     expect(wrapper.text()).toContain("Chicken Handi");
+    expect(wrapper.text()).toContain("查看详情");
   });
 
   it("renders cocktail cards with alcohol label", () => {
@@ -58,9 +59,52 @@ describe("cards", () => {
 
     expect(wrapper.text()).toContain("Lemonade");
     expect(wrapper.text()).toContain("Non alcoholic");
+    expect(wrapper.text()).toContain("查看详情");
   });
 
-  it("prefers localized instructions in result details", () => {
+  it("does not render card details inline before opening the detail modal", () => {
+    const wrapper = mount(AssistantResultBlock, {
+      props: {
+        message: createAssistantMessage([
+          {
+            ...createMealCard("1", "Chicken Rice", ["步骤 1：把鸡肉和米饭一起煮熟。"]),
+            ingredients: [{ name: "Chicken", measure: "1 lb" }],
+          },
+        ]),
+      },
+    });
+
+    expect(wrapper.text()).toContain("Chicken Rice");
+    expect(wrapper.text()).toContain("查看详情");
+    expect(wrapper.text()).not.toContain("步骤 1：把鸡肉和米饭一起煮熟。");
+    expect(wrapper.text()).not.toContain("Chicken · 1 lb");
+  });
+
+  it("opens and closes a detail modal for a single card", async () => {
+    const wrapper = mount(AssistantResultBlock, {
+      props: {
+        message: createAssistantMessage([
+          {
+            ...createMealCard("1", "Chicken Rice", ["步骤 1：把鸡肉和米饭一起煮熟。"]),
+            ingredients: [{ name: "Chicken", measure: "1 lb" }],
+          },
+        ]),
+      },
+    });
+
+    await wrapper.get("button.card-detail-button").trigger("click");
+
+    expect(wrapper.find(".detail-modal").exists()).toBe(true);
+    expect(wrapper.find(".detail-modal").text()).toContain("Chicken Rice");
+    expect(wrapper.find(".detail-modal").text()).toContain("Chicken · 1 lb");
+    expect(wrapper.find(".detail-modal").text()).toContain("步骤 1：把鸡肉和米饭一起煮熟。");
+
+    await wrapper.get("button.detail-modal-close").trigger("click");
+
+    expect(wrapper.find(".detail-modal").exists()).toBe(false);
+  });
+
+  it("prefers localized instructions in the detail modal", async () => {
     const wrapper = mount(AssistantResultBlock, {
       props: {
         message: {
@@ -85,8 +129,10 @@ describe("cards", () => {
       },
     });
 
-    expect(wrapper.text()).toContain("步骤 1：把鸡肉和米饭一起煮熟。");
-    expect(wrapper.text()).not.toContain("Cook chicken with rice.");
+    await wrapper.get("button.card-detail-button").trigger("click");
+
+    expect(wrapper.find(".detail-modal").text()).toContain("步骤 1：把鸡肉和米饭一起煮熟。");
+    expect(wrapper.find(".detail-modal").text()).not.toContain("Cook chicken with rice.");
   });
 
   it("renders all recommendation cards without toggle when three or fewer are returned", () => {
@@ -149,5 +195,24 @@ describe("cards", () => {
     expect(wrapper.text()).not.toContain("Meal 4");
     expect(wrapper.find(".card-slider").exists()).toBe(false);
     expect(wrapper.get("button.result-toggle").text()).toBe("查看更多");
+  });
+
+  it("opens details for a card that becomes visible after expanding the slider", async () => {
+    const wrapper = mount(AssistantResultBlock, {
+      props: {
+        message: createAssistantMessage([
+          createMealCard("1", "Meal 1"),
+          createMealCard("2", "Meal 2"),
+          createMealCard("3", "Meal 3"),
+          createMealCard("4", "Meal 4", ["Step 4"]),
+        ]),
+      },
+    });
+
+    await wrapper.get("button.result-toggle").trigger("click");
+    await wrapper.findAll("button.card-detail-button")[3].trigger("click");
+
+    expect(wrapper.find(".detail-modal").text()).toContain("Meal 4");
+    expect(wrapper.find(".detail-modal").text()).toContain("Step 4");
   });
 });

@@ -1,10 +1,12 @@
 import inspect
+import logging
 import time
 from collections.abc import Callable
 from typing import Any
 
 from pydantic import BaseModel, Field
 
+from app.core.logging import get_logger, log_event, summarize_tool_arguments
 from app.domain.models import Card, ToolDataResult
 from app.domain.tool_args import ToolValidationError
 
@@ -28,9 +30,13 @@ class ToolRunner:
         self,
         tools: dict[str, Callable] | None = None,
         validators: dict[str, Callable[[dict[str, Any]], dict[str, Any]]] | None = None,
+        settings: Any | None = None,
+        logger: logging.Logger | None = None,
     ):
         self.tools = tools or {}
         self.validators = validators or {}
+        self.settings = settings
+        self.logger = logger or get_logger(__name__)
         self._counter = 0
 
     async def run(
@@ -48,7 +54,7 @@ class ToolRunner:
         try:
             args = validator(raw_args)
         except ToolValidationError as exc:
-            return ToolRunResult(
+            result = ToolRunResult(
                 id=tool_id,
                 name=tool_name,
                 status="validation_failed",
@@ -62,10 +68,12 @@ class ToolRunner:
                     "allowedValues": exc.allowed_values,
                 },
             )
+            self._log_result(result, request_id)
+            return result
 
         tool = self.tools.get(tool_name)
         if tool is None:
-            return ToolRunResult(
+            result = ToolRunResult(
                 id=tool_id,
                 name=tool_name,
                 status="failed",
@@ -74,6 +82,8 @@ class ToolRunner:
                 durationMs=_duration_ms(started),
                 error=f"unknown tool: {tool_name}",
             )
+            self._log_result(result, request_id)
+            return result
 
         try:
             result = tool(args)
@@ -81,7 +91,7 @@ class ToolRunner:
                 result = await result
             if not isinstance(result, ToolDataResult):
                 raise TypeError("tool must return ToolDataResult")
-            return ToolRunResult(
+            run_result = ToolRunResult(
                 id=tool_id,
                 name=tool_name,
                 status=result.status,
@@ -93,8 +103,10 @@ class ToolRunner:
                 durationMs=_duration_ms(started),
                 error=result.error,
             )
+            self._log_result(run_result, request_id)
+            return run_result
         except Exception as exc:
-            return ToolRunResult(
+            result = ToolRunResult(
                 id=tool_id,
                 name=tool_name,
                 status="failed",
@@ -103,6 +115,28 @@ class ToolRunner:
                 durationMs=_duration_ms(started),
                 error=str(exc),
             )
+            self._log_result(result, request_id)
+            return result
+
+    def _log_result(self, result: ToolRunResult, request_id: str) -> None:
+        log_event(
+            self.logger,
+            "tool_run_finished",
+            settings=self.settings,
+            fields={
+                "requestId": request_id,
+                "toolId": result.id,
+                "name": result.name,
+                "status": result.status,
+                "arguments": summarize_tool_arguments(result.arguments, self.settings),
+                "durationMs": result.durationMs,
+                "resultCount": result.resultCount,
+                "lookupCount": result.lookupCount,
+                "retryOf": result.retryOf,
+                "error": result.error,
+                "validationError": result.validationError,
+            },
+        )
 
 
 def _duration_ms(started: float) -> int:

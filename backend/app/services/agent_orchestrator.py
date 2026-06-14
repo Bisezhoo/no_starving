@@ -1,8 +1,11 @@
 import json
+import logging
+import time
 from datetime import UTC, datetime
 from typing import Any, AsyncIterator
 from uuid import uuid4
 
+from app.core.logging import get_logger, log_event
 from app.domain.card_localization import localize_cards, should_localize_instructions
 from app.domain.language import detect_locale
 from app.domain.models import AgentMemory, AgentMemoryCandidate, Card, SseEvent, ToolCallSummary
@@ -17,16 +20,21 @@ class AgentOrchestrator:
         llm: Any,
         tool_runner: Any,
         memory_store: Any | None = None,
+        settings: Any | None = None,
+        logger: logging.Logger | None = None,
         max_tool_calls: int = 6,
         max_llm_steps: int = 4,
     ):
         self.llm = llm
         self.tool_runner = tool_runner
         self.memory_store = memory_store
+        self.settings = settings
+        self.logger = logger or get_logger(__name__)
         self.max_tool_calls = max_tool_calls
         self.max_llm_steps = max_llm_steps
 
     async def run(self, message: str) -> AsyncIterator[SseEvent]:
+        started = time.perf_counter()
         request_id = f"req_{uuid4().hex[:12]}"
         detected_locale = detect_locale(message)
         warnings: list[str] = []
@@ -48,6 +56,23 @@ class AgentOrchestrator:
         tool_call_count = 0
         llm_step_count = 0
 
+        log_event(
+            self.logger,
+            "agent_request_started",
+            settings=self.settings,
+            fields={
+                "requestId": request_id,
+                "userMessage": message,
+                "messageLength": len(message),
+                "detectedLocale": detected_locale,
+                "hasProfile": state.profile != type(state.profile)(),
+                "profileFieldCount": _profile_field_count(state.profile),
+                "historyCount": len(history),
+                "hasMemory": bool(memory.conversationSummary or memory.recentTurns or memory.activeCandidates),
+                "maxToolCalls": self.max_tool_calls,
+                "maxLlmSteps": self.max_llm_steps,
+            },
+        )
         yield SseEvent(event="meta", data={"requestId": request_id, "detectedLocale": detected_locale})
         if profile_patch:
             yield SseEvent(event="profile_update", data={"patch": profile_patch, "reason": "user_message"})
@@ -79,12 +104,14 @@ class AgentOrchestrator:
                     memory=memory,
                     message=message,
                     detected_locale=detected_locale,
+                    request_id=request_id,
+                    started=started,
                 )
                 return
 
             for call in tool_calls:
                 if tool_call_count >= self.max_tool_calls:
-                    warnings.append("已达 Tool 调用上限")
+                    warnings.append("接口被我查冒烟了，请重试！QAQ")
                     yield await self._build_done_event(
                         reply="",
                         cards=displayed_cards,
@@ -95,6 +122,8 @@ class AgentOrchestrator:
                         memory=memory,
                         message=message,
                         detected_locale=detected_locale,
+                        request_id=request_id,
+                        started=started,
                     )
                     return
 
@@ -139,7 +168,7 @@ class AgentOrchestrator:
                     displayed_cards.extend(localize_cards(ranked_cards, detected_locale, include_localized_instructions))
                     yield SseEvent(event="card", data={"cards": _dump_cards(displayed_cards)})
 
-        warnings.append("已达 LLM 推理步数上限")
+        warnings.append("我拼尽全力了，找不到更多了QAQ，请重试")
         yield await self._build_done_event(
             reply="",
             cards=displayed_cards,
@@ -150,6 +179,8 @@ class AgentOrchestrator:
             memory=memory,
             message=message,
             detected_locale=detected_locale,
+            request_id=request_id,
+            started=started,
         )
 
     async def _load_state(self) -> ConversationState:
@@ -172,15 +203,32 @@ class AgentOrchestrator:
         memory: AgentMemory,
         message: str,
         detected_locale: str,
+        request_id: str,
+        started: float,
     ) -> SseEvent:
         persist_warnings = await self._persist_state(profile, history, memory, message, reply, cards, tool_summaries)
+        all_warnings = warnings + persist_warnings
+        log_event(
+            self.logger,
+            "agent_request_finished",
+            settings=self.settings,
+            fields={
+                "requestId": request_id,
+                "durationMs": _duration_ms(started),
+                "toolCallCount": len(tool_summaries),
+                "cardCount": len(cards),
+                "warningCount": len(all_warnings),
+                "maxToolCalls": self.max_tool_calls,
+                "maxLlmSteps": self.max_llm_steps,
+            },
+        )
         return SseEvent(
             event="done",
             data={
                 "reply": reply,
                 "cards": _dump_cards(cards),
                 "toolCalls": tool_summaries,
-                "warnings": warnings + persist_warnings,
+                "warnings": all_warnings,
                 "detectedLocale": detected_locale,
             },
         )
@@ -293,3 +341,17 @@ def _summarize_user_message(message: str) -> str:
 
 def _truncate(value: str, limit: int) -> str:
     return value if len(value) <= limit else value[:limit]
+
+
+def _profile_field_count(profile: Any) -> int:
+    count = 0
+    for value in profile.model_dump(mode="json").values():
+        if isinstance(value, list):
+            count += len(value)
+        elif value is not None:
+            count += 1
+    return count
+
+
+def _duration_ms(started: float) -> int:
+    return int((time.perf_counter() - started) * 1000)

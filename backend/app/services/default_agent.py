@@ -40,6 +40,7 @@ def build_default_agent(settings: Settings, data_dir: Path | str | None = None) 
             "get_meal_detail": validate_get_meal_detail_args,
             "search_cocktails": validate_search_cocktails_args,
         },
+        settings=settings,
     )
     openrouter = OpenRouterClient(
         api_key=settings.openrouter_api_key,
@@ -54,6 +55,7 @@ def build_default_agent(settings: Settings, data_dir: Path | str | None = None) 
         llm=llm,
         tool_runner=tool_runner,
         memory_store=store,
+        settings=settings,
         max_tool_calls=settings.agent_max_tool_calls,
         max_llm_steps=settings.agent_max_llm_steps,
     )

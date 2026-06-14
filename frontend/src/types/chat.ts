@@ -69,6 +69,7 @@ export type AssistantMessage = {
   profileUpdates?: Record<string, unknown>[];
   error?: string;
   pending?: boolean;
+  streaming?: boolean;
   createdAt?: string;
 };
 

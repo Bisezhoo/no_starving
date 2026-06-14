@@ -1,0 +1,573 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Tool 返回结果翻译与前端展示逻辑</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #202124;
+      --muted: #626a73;
+      --line: #d8dde4;
+      --panel: #f7f9fb;
+      --accent: #0f766e;
+      --accent-soft: #e6f5f2;
+      --warn: #a15c00;
+      --warn-soft: #fff4df;
+      --code: #1f2937;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      font: 14px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: #ffffff;
+    }
+
+    main {
+      width: min(1120px, calc(100% - 48px));
+      margin: 0 auto;
+      padding: 32px 0 56px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 30px;
+      line-height: 1.25;
+    }
+
+    h2 {
+      margin: 34px 0 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--line);
+      font-size: 22px;
+    }
+
+    h3 {
+      margin: 22px 0 8px;
+      font-size: 17px;
+    }
+
+    p {
+      margin: 8px 0;
+    }
+
+    code {
+      padding: 2px 5px;
+      border-radius: 4px;
+      color: var(--code);
+      background: #eef1f5;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.92em;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 12px 0 18px;
+      table-layout: fixed;
+    }
+
+    th,
+    td {
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      vertical-align: top;
+      text-align: left;
+    }
+
+    th {
+      background: var(--panel);
+      font-weight: 700;
+    }
+
+    ul,
+    ol {
+      margin: 8px 0 8px 22px;
+      padding: 0;
+    }
+
+    .meta {
+      display: grid;
+      grid-template-columns: 140px 1fr;
+      gap: 0;
+      margin: 18px 0 26px;
+      border: 1px solid var(--line);
+    }
+
+    .meta div {
+      padding: 9px 12px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .meta div:nth-child(odd) {
+      background: var(--panel);
+      font-weight: 700;
+    }
+
+    .meta div:nth-last-child(-n + 2) {
+      border-bottom: 0;
+    }
+
+    .note {
+      padding: 12px 14px;
+      border-left: 4px solid var(--accent);
+      background: var(--accent-soft);
+    }
+
+    .warning {
+      padding: 12px 14px;
+      border-left: 4px solid var(--warn);
+      background: var(--warn-soft);
+    }
+
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+      margin: 16px 0 20px;
+    }
+
+    .step {
+      min-height: 112px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+    }
+
+    .step strong {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--accent);
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .compact td,
+    .compact th {
+      padding: 8px 10px;
+    }
+
+    @media (max-width: 860px) {
+      main {
+        width: min(100% - 28px, 1120px);
+      }
+
+      .flow,
+      .grid-2 {
+        grid-template-columns: 1fr;
+      }
+
+      .meta {
+        grid-template-columns: 1fr;
+      }
+
+      .meta div:nth-child(odd) {
+        border-bottom: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Tool 返回结果翻译与前端展示逻辑</h1>
+    <p class="note">
+      本文梳理当前代码中的“Tool 返回结果如何被解释/本地化”以及“前端如何接收 SSE 并渲染回复和推荐结果”。当前实现不是把外部 API 的所有字段逐字翻译，而是在保留原始字段的基础上，增加 <code>localized*</code> 辅助展示字段，并要求 LLM 最终文本回复使用本轮用户语言。
+    </p>
+
+    <section class="meta" aria-label="文档元信息">
+      <div>文档版本</div>
+      <div>v0.1</div>
+      <div>最近更新时间</div>
+      <div>2026-06-14 22:54:41 CST</div>
+      <div>对应代码</div>
+      <div><code>backend/app/services/agent_orchestrator.py</code>、<code>backend/app/domain/card_localization.py</code>、<code>frontend/src/components/ChatPage.vue</code>、<code>frontend/src/components/AssistantResultBlock.vue</code></div>
+    </section>
+
+    <h2>1. 结论摘要</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>问题</th>
+          <th>当前逻辑</th>
+          <th>结果</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>用户语言怎么确定？</td>
+          <td>后端用 <code>detect_locale(message)</code> 按本轮消息判断；包含中文字符则为 <code>zh-CN</code>，否则为 <code>en-US</code>。</td>
+          <td>不保存 <code>languagePreference</code>，每轮单独判断。</td>
+        </tr>
+        <tr>
+          <td>Tool 返回结果是否直接翻译？</td>
+          <td>Tool 层不翻译；Tool 只返回标准化 <code>MealCard</code> / <code>CocktailCard</code>。</td>
+          <td>原始标题、食材、步骤、分类等字段保留外部 API 原文。</td>
+        </tr>
+        <tr>
+          <td>卡片怎么本地化？</td>
+          <td>Agent 在推荐排序后调用 <code>localize_cards()</code>，写入 <code>localizedLanguage</code>、<code>localizedSummary</code>，必要时写入 <code>localizedInstructions</code>。</td>
+          <td>前端展示中文/英文辅助解释，但不覆盖原始字段。</td>
+        </tr>
+        <tr>
+          <td>最终自然语言回复怎么保证语言？</td>
+          <td>OpenRouter prompt 中注入 <code>Output locale</code>；Tool 结果回填后再次要求最终回复使用本轮语言。</td>
+          <td>最终 <code>delta</code> / <code>done.reply</code> 依赖 LLM 按语言约束生成。</td>
+        </tr>
+        <tr>
+          <td>前端是否做翻译？</td>
+          <td>不做。前端只渲染后端给的 <code>reply</code>、<code>cards</code>、<code>localized*</code> 字段。</td>
+          <td>业务翻译/解释逻辑留在后端。</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>2. 后端：Tool 返回结果的本地化链路</h2>
+    <div class="flow">
+      <div class="step">
+        <strong>1. 语言检测</strong>
+        <p>Agent 开始时执行 <code>detect_locale(message)</code>，得到 <code>detectedLocale</code>。</p>
+      </div>
+      <div class="step">
+        <strong>2. LLM 调 Tool</strong>
+        <p>OpenRouter 根据 prompt 生成 <code>tool_calls</code>，Tool 参数必须是英文。</p>
+      </div>
+      <div class="step">
+        <strong>3. Tool 返回标准卡片</strong>
+        <p>ToolRunner 执行 Tool，返回 <code>ToolDataResult.cards</code>。</p>
+      </div>
+      <div class="step">
+        <strong>4. Agent 本地化并发 SSE</strong>
+        <p>排序后调用 <code>localize_cards()</code>，通过 <code>card</code> 和 <code>done.cards</code> 返回。</p>
+      </div>
+    </div>
+
+    <h3>2.1 语言检测</h3>
+    <table class="compact">
+      <thead>
+        <tr>
+          <th>位置</th>
+          <th>规则</th>
+          <th>影响范围</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>backend/app/domain/language.py</code></td>
+          <td>本轮消息中存在中文字符，则 <code>zh-CN</code>；否则 <code>en-US</code>。</td>
+          <td><code>meta.detectedLocale</code>、LLM prompt、本地化卡片字段。</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>2.2 LLM 回复语言约束</h3>
+    <p>在 <code>OpenRouterStepLlm._build_messages()</code> 中，后端会向 system prompt 注入：</p>
+    <ul>
+      <li><code>Output locale: zh-CN/en-US</code></li>
+      <li>要求自然语言回复、解释、warning、追问都使用该语言。</li>
+    </ul>
+    <p>当已经有 Tool 结果时，后端还会追加一条 user message，明确要求：</p>
+    <ul>
+      <li><code>Final reply must use {detectedLocale}</code></li>
+      <li>Tool 结果、空结果、校验失败和下一步说明都用本轮语言解释。</li>
+    </ul>
+    <p class="warning">
+      这里约束的是 LLM 的自然语言输出。外部 API 原始字段不会被 LLM 改写，也不会在 Tool 层被替换。
+    </p>
+
+    <h3>2.3 卡片本地化字段</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>字段</th>
+          <th>生成位置</th>
+          <th>当前含义</th>
+          <th>是否覆盖原始字段</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>localizedLanguage</code></td>
+          <td><code>card_localization.py</code></td>
+          <td>记录本轮用于展示解释的语言，如 <code>zh-CN</code>。</td>
+          <td>否</td>
+        </tr>
+        <tr>
+          <td><code>localizedSummary</code></td>
+          <td><code>card_localization.py</code></td>
+          <td>根据卡片类型生成一句本轮语言的解释摘要。中文时是“推荐 XXX：这是一道/一款...”格式。</td>
+          <td>否</td>
+        </tr>
+        <tr>
+          <td><code>localizedInstructions</code></td>
+          <td><code>card_localization.py</code></td>
+          <td>仅当用户本轮问“怎么做 / 步骤 / 详细 / how to / cook / make”等时生成。中文时给每步加 <code>步骤 N：</code> 前缀。</td>
+          <td>否</td>
+        </tr>
+        <tr>
+          <td><code>localizedTitle</code></td>
+          <td>模型字段预留</td>
+          <td>当前代码没有生成实际值，通常为 <code>null</code> 或未展示。</td>
+          <td>否</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>2.4 当前“翻译”的边界</h3>
+    <div class="grid-2">
+      <div>
+        <h3>会本地化的内容</h3>
+        <ul>
+          <li>LLM 文本回复：<code>delta</code> / <code>done.reply</code></li>
+          <li>卡片辅助摘要：<code>localizedSummary</code></li>
+          <li>必要时的步骤辅助展示：<code>localizedInstructions</code></li>
+          <li>warning / 追问：由 prompt 要求 LLM 使用本轮语言</li>
+        </ul>
+      </div>
+      <div>
+        <h3>不会强制翻译的内容</h3>
+        <ul>
+          <li>外部 API 原始标题：<code>title</code></li>
+          <li>原始食材名和计量：<code>ingredients[].name/measure</code></li>
+          <li>原始步骤正文：<code>instructions</code></li>
+          <li>分类、国家、酒精属性、杯型等外部枚举字段</li>
+        </ul>
+      </div>
+    </div>
+
+    <h2>3. 后端：SSE 事件中的结果返回</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>事件</th>
+          <th>来源</th>
+          <th>数据含义</th>
+          <th>前端用途</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>meta</code></td>
+          <td>Agent 请求开始</td>
+          <td><code>requestId</code>、<code>detectedLocale</code></td>
+          <td>当前前端没有直接展示，但可用于调试或后续显示。</td>
+        </tr>
+        <tr>
+          <td><code>delta</code></td>
+          <td>OpenRouter 流式文本</td>
+          <td>LLM 生成的增量文本，语言由 prompt 约束。</td>
+          <td>追加到助手消息 <code>reply</code>。</td>
+        </tr>
+        <tr>
+          <td><code>tool_call</code></td>
+          <td>Agent 调用 Tool 前</td>
+          <td>Tool 名称、参数、状态。</td>
+          <td>进入 Tool 轨迹列表。</td>
+        </tr>
+        <tr>
+          <td><code>tool_result</code></td>
+          <td>ToolRunner 执行后</td>
+          <td>Tool 状态、耗时、结果数量、错误、校验错误，可能包含原始标准化卡片。</td>
+          <td>进入 Tool 轨迹列表；不是主要卡片展示来源。</td>
+        </tr>
+        <tr>
+          <td><code>card</code></td>
+          <td>Agent 排序和本地化后</td>
+          <td>当前可展示的 <code>cards</code> 快照，已包含 <code>localized*</code> 辅助字段。</td>
+          <td>更新助手消息 <code>cards</code>，触发结果区展示。</td>
+        </tr>
+        <tr>
+          <td><code>profile_update</code></td>
+          <td>用户偏好解析</td>
+          <td>画像 patch 和原因。</td>
+          <td>进入画像变化区。</td>
+        </tr>
+        <tr>
+          <td><code>error</code></td>
+          <td>运行期失败</td>
+          <td>错误码和错误文案。</td>
+          <td>设置助手消息 <code>error</code>。</td>
+        </tr>
+        <tr>
+          <td><code>done</code></td>
+          <td>Agent 收尾</td>
+          <td>最终 <code>reply</code>、<code>cards</code>、<code>toolCalls</code>、<code>warnings</code>、<code>detectedLocale</code>。</td>
+          <td>用最终快照覆盖消息状态，清除 pending。</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>4. 前端：接收结果和渲染逻辑</h2>
+    <div class="flow">
+      <div class="step">
+        <strong>1. 发起请求</strong>
+        <p><code>ChatPage.send()</code> 插入用户消息和 pending 助手消息。</p>
+      </div>
+      <div class="step">
+        <strong>2. 解析 SSE</strong>
+        <p><code>streamChat()</code> 用 <code>ReadableStream</code> 解析事件。</p>
+      </div>
+      <div class="step">
+        <strong>3. 更新状态</strong>
+        <p>不同事件回调更新 <code>reply</code>、<code>cards</code>、<code>toolCalls</code>、<code>warnings</code>。</p>
+      </div>
+      <div class="step">
+        <strong>4. 展示消息</strong>
+        <p><code>AssistantMessage</code> 渲染文本；有卡片时渲染结果区。</p>
+      </div>
+    </div>
+
+    <h3>4.1 ChatPage 的事件处理</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>SSE 事件</th>
+          <th>前端处理</th>
+          <th>展示结果</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>delta</code></td>
+          <td><code>message.reply += data.text</code>，并清除 <code>pending</code>。</td>
+          <td>文本回复实时增长。</td>
+        </tr>
+        <tr>
+          <td><code>card</code></td>
+          <td><code>message.cards = data.cards</code>，并清除 <code>pending</code>。</td>
+          <td>显示推荐结果区。</td>
+        </tr>
+        <tr>
+          <td><code>tool_call</code></td>
+          <td>追加一条 Tool started 轨迹。</td>
+          <td>Tool 面板可看到调用开始。</td>
+        </tr>
+        <tr>
+          <td><code>tool_result</code></td>
+          <td>追加 Tool 结果轨迹。</td>
+          <td>Tool 面板可看到状态、耗时、结果数或错误。</td>
+        </tr>
+        <tr>
+          <td><code>profile_update</code></td>
+          <td>追加到 <code>profileUpdates</code>。</td>
+          <td>画像变化区展示 patch。</td>
+        </tr>
+        <tr>
+          <td><code>error</code></td>
+          <td>设置 <code>message.error</code>，清除 <code>pending</code>。</td>
+          <td>展示错误文案。</td>
+        </tr>
+        <tr>
+          <td><code>done</code></td>
+          <td>用最终快照设置 <code>reply/cards/toolCalls/warnings</code>，清除 <code>pending</code>。</td>
+          <td>最终状态定稿。</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>4.2 AssistantMessage 的展示顺序</h3>
+    <ol>
+      <li>如果有 <code>warnings</code>，先展示 warning 条。</li>
+      <li>如果 <code>pending=true</code> 且没有 reply/error/cards，展示“思考中”。</li>
+      <li>如果有 <code>reply</code>，用 <code>MarkdownReply</code> 渲染并通过 DOMPurify 清洗。</li>
+      <li>如果有 <code>error</code>，展示错误文案。</li>
+      <li>只有 <code>cards.length &gt; 0</code> 时才展示 <code>AssistantResultBlock</code>。</li>
+    </ol>
+
+    <h3>4.3 推荐结果区的字段优先级</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>区域</th>
+          <th>组件</th>
+          <th>字段优先级</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>卡片标题</td>
+          <td><code>MealCard</code> / <code>CocktailCard</code></td>
+          <td>使用 <code>card.title</code>；当前不使用 <code>localizedTitle</code>。</td>
+        </tr>
+        <tr>
+          <td>卡片摘要</td>
+          <td><code>MealCard</code> / <code>CocktailCard</code></td>
+          <td>如果存在 <code>localizedSummary</code>，展示它。</td>
+        </tr>
+        <tr>
+          <td>分类/国家/酒精/杯型</td>
+          <td>卡片 meta row</td>
+          <td>展示原始外部字段：<code>category</code>、<code>country</code>、<code>alcoholic</code>、<code>glass</code>。</td>
+        </tr>
+        <tr>
+          <td>食材</td>
+          <td>卡片和步骤区</td>
+          <td>展示原始 <code>ingredients[].name</code> 和 <code>measure</code>。</td>
+        </tr>
+        <tr>
+          <td>步骤</td>
+          <td><code>AssistantResultBlock.stepsFor()</code></td>
+          <td>优先 <code>localizedInstructions</code>；没有则回退 <code>instructions</code>。</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>4.4 推荐结果收起/展开</h3>
+    <ul>
+      <li>默认最多展示前 3 张卡片。</li>
+      <li>超过 3 张时显示“查看更多”。</li>
+      <li>展开后以横向滑动轨道展示全部卡片，并显示“左右滑动查看更多”。</li>
+      <li>食材/步骤区使用同一个 <code>visibleCards</code>，未展开的卡片步骤不会提前露出。</li>
+    </ul>
+
+    <h2>5. 历史消息加载逻辑</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>阶段</th>
+          <th>逻辑</th>
+          <th>注意点</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>页面挂载</td>
+          <td><code>ChatPage.onMounted()</code> 调用 <code>loadChatHistory()</code>。</td>
+          <td>如果历史为空，显示默认欢迎消息。</td>
+        </tr>
+        <tr>
+          <td>后端读取</td>
+          <td><code>GET /api/chat/history</code> 返回 <code>chat-history.json</code> 中最近 24 小时、最多 60 条消息。</td>
+          <td>返回的是已保存的最终 UI 快照，不重新翻译。</td>
+        </tr>
+        <tr>
+          <td>避免覆盖</td>
+          <td>如果用户在历史返回前已经发送消息，则不再用历史覆盖当前 <code>messages</code>。</td>
+          <td>避免竞态导致新消息消失。</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>6. 关键边界与后续可优化点</h2>
+    <div class="warning">
+      当前系统的“翻译”更准确地说是“后端本地化辅助解释”：保留外部 API 原始事实字段，同时增加本轮语言的摘要和步骤前缀。它没有对所有标题、食材、步骤做完整机器翻译。
+    </div>
+    <ul>
+      <li>如果产品要求“所有卡片字段完整中文化”，需要新增后端翻译层或让 LLM 对卡片生成完整 localized copy，并标记机器翻译来源。</li>
+      <li>如果要支持多语言，需要把 <code>card_localization.py</code> 的模板从 <code>zh-CN/en-US</code> 扩展为更多 locale。</li>
+      <li>如果要翻译步骤正文，不能只加 <code>步骤 N：</code> 前缀；需要逐步翻译并保留原文。</li>
+      <li>前端当前不做翻译，这是符合“业务逻辑归后端”的边界。</li>
+    </ul>
+  </main>
+</body>
+</html>

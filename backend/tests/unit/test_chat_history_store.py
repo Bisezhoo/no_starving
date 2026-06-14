@@ -1,4 +1,6 @@
+import logging
 from datetime import UTC, datetime, timedelta
+from pathlib import Path
 
 import pytest
 
@@ -19,6 +21,38 @@ async def test_damaged_chat_history_loads_empty_messages(tmp_path):
     store = ChatHistoryStore(tmp_path)
 
     assert await store.load_messages() == []
+
+
+@pytest.mark.asyncio
+async def test_damaged_chat_history_is_logged_without_raw_file_content(tmp_path, caplog):
+    (tmp_path / "chat-history.json").write_text('{"content":"secret dinner"', encoding="utf-8")
+    store = ChatHistoryStore(tmp_path, logger=logging.getLogger("tests.chat_history"))
+
+    with caplog.at_level(logging.WARNING, logger="tests.chat_history"):
+        assert await store.load_messages() == []
+
+    assert "chat_history_read_failed" in caplog.text
+    assert "secret dinner" not in caplog.text
+
+
+@pytest.mark.asyncio
+async def test_chat_history_write_failure_is_logged(tmp_path, monkeypatch, caplog):
+    store = ChatHistoryStore(tmp_path, logger=logging.getLogger("tests.chat_history.write"))
+    now = datetime(2026, 6, 14, 20, 0, tzinfo=UTC)
+
+    def fail_replace(self: Path, target: Path):
+        raise OSError("disk full")
+
+    monkeypatch.setattr(Path, "replace", fail_replace)
+    with caplog.at_level(logging.ERROR, logger="tests.chat_history.write"):
+        warnings = await store.append_messages(
+            [UserChatHistoryMessage(role="user", content="hello", createdAt=now.isoformat())],
+            now=now,
+        )
+
+    assert warnings
+    assert "chat_history_write_failed" in caplog.text
+    assert "disk full" in caplog.text
 
 
 @pytest.mark.asyncio

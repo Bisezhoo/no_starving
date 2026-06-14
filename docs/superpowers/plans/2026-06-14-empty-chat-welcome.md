@@ -12,12 +12,12 @@
 
 | 项目 | 内容 |
 |------|------|
-| 计划版本 | v0.1 |
-| 最近更新时间 | 2026-06-14 22:28:24 CST |
-| 状态 | ⏳ 待执行 |
+| 计划版本 | v0.2 |
+| 最近更新时间 | 2026-06-14 22:36:47 CST |
+| 状态 | ✅ 计划已完成 |
 | 关联需求 | `智能食谱助手需求分析.md` v0.32 |
 | 关联设计 | `智能食谱助手技术设计.md` v0.37 |
-| 关联专项设计 | `docs/superpowers/specs/2026-06-14-empty-chat-welcome-design.md` v0.2 |
+| 关联专项设计 | `docs/superpowers/specs/2026-06-14-empty-chat-welcome-design.md` v0.3 |
 
 ## 1. 文件结构
 
@@ -33,11 +33,13 @@
 
 | 序号 | 任务 | 状态 | 备注 |
 |------|------|------|------|
-| 1 | 前端：编写空历史欢迎语失败测试 | ⏳ 待执行 | 先验证当前空历史页面不会显示欢迎语 |
-| 2 | 前端：实现默认欢迎语初始化 | ⏳ 待执行 | 只改 `ChatPage.vue`，不改后端 |
-| 3 | 前端：补充历史加载失败与发送测试 | ⏳ 待执行 | 确保失败降级和发送流程可用 |
-| 4 | 文档：更新代码走读和计划状态 | ⏳ 待执行 | 同步文档版本、最近更新时间和验证结果 |
-| 5 | 验证：运行前端定向测试和构建 | ⏳ 待执行 | `chat-page.spec.ts`、前端构建通过 |
+| 1 | 前端：编写空历史欢迎语失败测试 | ✅ 已完成 | 已确认当前实现缺少空历史欢迎语 |
+| 2 | 前端：实现默认欢迎语初始化 | ✅ 已完成 | 已在 `ChatPage.vue` 新增本地欢迎语消息工厂 |
+| 3 | 前端：补充历史加载失败与发送测试 | ✅ 已完成 | 已覆盖失败降级、发送流程和历史存在时不插入欢迎语 |
+| 4 | 文档：更新代码走读和计划状态 | ✅ 已完成 | 已同步文档版本、最近更新时间和验证结果 |
+| 5 | 验证：运行前端定向测试和构建 | ✅ 已完成 | `chat-page.spec.ts` 7 passed；前端构建通过 |
+
+✅ 计划已完成。
 
 ## 3. 任务拆解
 
@@ -47,7 +49,7 @@
 - Modify: `frontend/tests/chat-page.spec.ts`
 - Modify: `frontend/src/components/ChatPage.vue`
 
-- [ ] **Step 1: 写空历史失败测试**
+- [x] **Step 1: 写空历史失败测试**
 
 在 `frontend/tests/chat-page.spec.ts` 的 `describe("ChatPage", ...)` 中新增测试：
 
@@ -66,7 +68,7 @@ it("shows default welcome message when chat history is empty", async () => {
 });
 ```
 
-- [ ] **Step 2: 运行测试确认失败**
+- [x] **Step 2: 运行测试确认失败**
 
 Run:
 
@@ -77,7 +79,7 @@ npm test -- chat-page.spec.ts --run
 
 Expected: FAIL，新增测试无法找到 `"你好！我是你的 食谱助手（Recipe Assistant）"`，因为当前空历史时 `messages` 仍为空数组。
 
-- [ ] **Step 3: 实现最小欢迎语工厂**
+- [x] **Step 3: 实现最小欢迎语工厂**
 
 在 `frontend/src/components/ChatPage.vue` 的 `messages` 和 `sending` 声明后新增常量与工厂函数：
 
@@ -128,7 +130,7 @@ onMounted(async () => {
 
 该实现保留现有“如果用户已发送消息，就不覆盖消息列表”的保护；历史失败时也不清空用户已输入产生的消息。
 
-- [ ] **Step 4: 运行测试确认通过**
+- [x] **Step 4: 运行测试确认通过**
 
 Run:
 
@@ -145,7 +147,7 @@ Expected: PASS，`ChatPage` 相关测试全部通过。
 - Modify: `frontend/tests/chat-page.spec.ts`
 - Modify: `frontend/src/components/ChatPage.vue`
 
-- [ ] **Step 1: 写历史存在时不插入欢迎语测试**
+- [x] **Step 1: 写历史存在时不插入欢迎语测试**
 
 在 `frontend/tests/chat-page.spec.ts` 中补充测试：
 
@@ -172,7 +174,7 @@ it("does not insert default welcome message when chat history exists", async () 
 });
 ```
 
-- [ ] **Step 2: 写历史加载失败时展示欢迎语且可发送测试**
+- [x] **Step 2: 写历史加载失败时展示欢迎语且可发送测试**
 
 在 `frontend/tests/chat-page.spec.ts` 中补充测试：
 
@@ -203,7 +205,7 @@ it("shows default welcome message and still sends when chat history fails", asyn
 });
 ```
 
-- [ ] **Step 3: 运行测试确认行为**
+- [x] **Step 3: 运行测试确认行为**
 
 Run:
 
@@ -221,7 +223,7 @@ Expected: PASS，空历史、有历史、历史失败和现有流式消息测试
 - Modify: `docs/superpowers/specs/2026-06-14-empty-chat-welcome-design.md`
 - Modify: `docs/superpowers/plans/2026-06-14-empty-chat-welcome.md`
 
-- [ ] **Step 1: 更新代码走读文档**
+- [x] **Step 1: 更新代码走读文档**
 
 将 `智能食谱助手代码走读.md` 文档版本提升到下一版本，最近更新时间使用实际执行时间，并在实现范围或前端走读段落补充：
 
@@ -236,13 +238,13 @@ Expected: PASS，空历史、有历史、历史失败和现有流式消息测试
 `docs/superpowers/plans/2026-06-14-empty-chat-welcome.md` v0.2
 ```
 
-- [ ] **Step 2: 更新专项设计和实施计划状态**
+- [x] **Step 2: 更新专项设计和实施计划状态**
 
 将 `docs/superpowers/specs/2026-06-14-empty-chat-welcome-design.md` 更新为 v0.3，执行计划表中任务 2~5 标记为 `✅ 已完成`，并写明测试和构建结果。
 
 将本计划更新为 v0.2，执行计划表中任务 1~5 标记为 `✅ 已完成`，状态改为 `✅ 计划已完成`。
 
-- [ ] **Step 3: 运行最终验证**
+- [x] **Step 3: 运行最终验证**
 
 Run:
 

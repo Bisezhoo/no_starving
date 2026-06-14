@@ -1,5 +1,9 @@
+import json
+import logging
+
 import pytest
 
+from app.core.config import Settings
 from app.domain.models import AgentMemory, MealCard, TasteProfile, ToolDataResult
 from app.services.agent_orchestrator import AgentOrchestrator
 
@@ -162,3 +166,34 @@ async def test_agent_localizes_detail_instructions_when_user_asks_how_to_make_it
     assert done.data["cards"][0]["localizedLanguage"] == "zh-CN"
     assert done.data["cards"][0]["localizedInstructions"][0].startswith("步骤 1：")
     assert "Cook chicken with rice" in done.data["cards"][0]["localizedInstructions"][0]
+
+
+@pytest.mark.asyncio
+async def test_agent_logs_start_and_finish_without_full_user_message(caplog):
+    settings = Settings(
+        openrouter_api_key="sk-test",
+        openrouter_model="deepseek/deepseek-chat",
+        log_full_user_message=False,
+    )
+    logger = logging.getLogger("tests.agent_orchestrator")
+    agent = AgentOrchestrator(
+        llm=OneToolThenReplyLlm(),
+        tool_runner=CardToolRunner(),
+        memory_store=FakeMemoryStore(),
+        settings=settings,
+        logger=logger,
+        max_tool_calls=6,
+        max_llm_steps=4,
+    )
+
+    with caplog.at_level(logging.INFO, logger=logger.name):
+        events = [event async for event in agent.run("我喜欢鸡肉")]
+
+    assert [event.event for event in events][-1] == "done"
+    payloads = [json.loads(record.message) for record in caplog.records]
+    assert payloads[0]["event"] == "agent_request_started"
+    assert payloads[0]["userMessage"] == {"present": True, "length": 5}
+    assert payloads[-1]["event"] == "agent_request_finished"
+    assert payloads[-1]["cardCount"] == 1
+    assert payloads[-1]["toolCallCount"] == 1
+    assert "我喜欢鸡肉" not in caplog.text

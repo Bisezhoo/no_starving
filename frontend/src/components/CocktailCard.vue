@@ -9,11 +9,7 @@
         <span v-if="card.alcoholic">{{ card.alcoholic }}</span>
         <span v-if="card.glass">{{ card.glass }}</span>
       </div>
-      <ul v-if="card.ingredients?.length" class="ingredient-list">
-        <li v-for="ingredient in card.ingredients" :key="ingredient.name">
-          {{ ingredient.name }}<span v-if="ingredient.measure"> · {{ ingredient.measure }}</span>
-        </li>
-      </ul>
+      <button class="card-detail-button" type="button" @click="viewDetail">查看详情</button>
     </div>
   </article>
 </template>
@@ -21,5 +17,8 @@
 <script setup lang="ts">
 import type { CocktailCard } from "../types/chat";
 
-defineProps<{ card: CocktailCard }>();
+const props = defineProps<{ card: CocktailCard }>();
+const emit = defineEmits<{ (event: "view-detail", card: CocktailCard): void }>();
+
+const viewDetail = () => emit("view-detail", props.card);
 </script>

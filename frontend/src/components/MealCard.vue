@@ -11,11 +11,7 @@
       <div v-if="visibleTags.length" class="tag-row">
         <span v-for="tag in visibleTags" :key="tag">{{ tag }}</span>
       </div>
-      <ul v-if="card.ingredients?.length" class="ingredient-list">
-        <li v-for="ingredient in card.ingredients" :key="ingredient.name">
-          {{ ingredient.name }}<span v-if="ingredient.measure"> · {{ ingredient.measure }}</span>
-        </li>
-      </ul>
+      <button class="card-detail-button" type="button" @click="viewDetail">查看详情</button>
     </div>
   </article>
 </template>
@@ -25,5 +21,8 @@ import { computed } from "vue";
 import type { MealCard } from "../types/chat";
 
 const props = defineProps<{ card: MealCard }>();
+const emit = defineEmits<{ (event: "view-detail", card: MealCard): void }>();
+
 const visibleTags = computed(() => (props.card.tags ?? []).filter(Boolean));
+const viewDetail = () => emit("view-detail", props.card);
 </script>

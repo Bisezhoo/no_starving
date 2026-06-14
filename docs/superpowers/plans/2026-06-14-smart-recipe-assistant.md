@@ -12,8 +12,8 @@
 
 | 项目 | 内容 |
 |------|------|
-| 文档版本 | v0.12 |
-| 最近更新时间 | 2026-06-14 21:12:56 CST |
+| 文档版本 | v0.13 |
+| 最近更新时间 | 2026-06-14 22:13:12 CST |
 | 文档状态 | ✅ 计划已完成 |
 | 关联需求 | `智能食谱助手需求分析.md` v0.29 |
 | 关联设计 | `智能食谱助手技术设计.md` v0.34 |
@@ -113,7 +113,8 @@
 | 10C | Agent 文本基础 Markdown 安全渲染 | ✅ 已完成 | 新增 `MarkdownReply.vue` 和 Markdown 渲染测试；前端组件 7 passed；前端全量 13 passed；`npm run build` 通过；已更新代码走读 |
 | 10D | Markdown 渲染切换为 `marked + DOMPurify` | ✅ 已完成 | 已补链接/代码块/清洗测试；安装 `marked`、`dompurify`；前端组件 7 passed；前端全量 13 passed；`npm run build` 通过 |
 | 10E | Tool 后语言闭环与卡片本地化 | ✅ 已完成 | 已补 `detectedLocale` 传入 LLM 上下文、Tool 结果语言约束、卡片 `localizedSummary/localizedLanguage/localizedInstructions` 和前端本地化步骤优先展示；后端相关回归 14 passed，前端相关回归 6 passed |
-| 11 | 全量验证、代码走读文档和审查准备 | ✅ 已完成 | 后端全量 46 passed；前端全量 16 passed；`npm run build` 通过；已更新代码走读 |
+| 10F | 日志安全与结构化日志补齐 | ✅ 已完成 | 新增 `core/logging.py`，补启动、Agent、Tool、OpenRouter、MemoryStore、ChatHistoryStore 结构化日志；敏感字段默认摘要、API Key 始终脱敏；后端全量 57 passed |
+| 11 | 全量验证、代码走读文档和审查准备 | ✅ 已完成 | 后端全量 57 passed；前端全量 22 passed；`npm run build` 通过；已更新代码走读 |
 
 ## 4. 实现任务
 

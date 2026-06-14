@@ -1,7 +1,9 @@
 import json
+import logging
 from pathlib import Path
 from typing import Any
 
+from app.core.logging import get_logger, log_event
 from app.domain.models import AgentMemory, RecommendationRecord, TasteProfile
 
 
@@ -11,8 +13,9 @@ class MemoryStore:
     MEMORY_FILE = "agent-memory.json"
     HISTORY_LIMIT = 20
 
-    def __init__(self, data_dir: Path):
+    def __init__(self, data_dir: Path, logger: logging.Logger | None = None):
         self.data_dir = data_dir
+        self.logger = logger or get_logger(__name__)
         self.data_dir.mkdir(parents=True, exist_ok=True)
 
     async def load_profile(self) -> TasteProfile:
@@ -59,6 +62,12 @@ class MemoryStore:
                 self._atomic_write(self.data_dir / file_name, payload)
             except Exception as exc:
                 warnings.append(f"{file_name} 持久化失败: {exc}")
+                log_event(
+                    self.logger,
+                    "memory_store_write_failed",
+                    fields={"fileName": file_name, "errorType": type(exc).__name__, "error": str(exc)},
+                    level=logging.ERROR,
+                )
         return warnings
 
     def _read_json(self, path: Path, default: Any) -> Any:
@@ -66,7 +75,13 @@ class MemoryStore:
             return default
         try:
             return json.loads(path.read_text(encoding="utf-8"))
-        except Exception:
+        except Exception as exc:
+            log_event(
+                self.logger,
+                "memory_store_read_failed",
+                fields={"fileName": path.name, "errorType": type(exc).__name__, "error": str(exc)},
+                level=logging.WARNING,
+            )
             return default
 
     def _atomic_write(self, path: Path, payload: Any) -> None:

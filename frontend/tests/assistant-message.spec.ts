@@ -3,6 +3,30 @@ import { describe, expect, it } from "vitest";
 import AssistantMessage from "../src/components/AssistantMessage.vue";
 
 describe("AssistantMessage", () => {
+  it("renders animated streaming hint at the top while backend stream is active", () => {
+    const wrapper = mount(AssistantMessage, {
+      props: {
+        message: {
+          role: "assistant",
+          reply: "推荐番茄鸡蛋面",
+          cards: [],
+          toolCalls: [],
+          warnings: [],
+          profileUpdates: [],
+          streaming: true,
+        },
+      },
+    });
+
+    expect(wrapper.find(".assistant-streaming").exists()).toBe(true);
+    expect(wrapper.find(".assistant-message").element.firstElementChild?.classList.contains("assistant-streaming")).toBe(
+      true,
+    );
+    expect(wrapper.text()).toContain("疯狂思考中，请稍等");
+    expect(wrapper.text()).toContain("推荐番茄鸡蛋面");
+    expect(wrapper.findAll(".assistant-streaming .dot")).toHaveLength(3);
+  });
+
   it("renders thinking placeholder while assistant reply is pending", () => {
     const wrapper = mount(AssistantMessage, {
       props: {

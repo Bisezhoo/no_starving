@@ -1,8 +1,10 @@
 {
-  "allowAlcohol": null,
+  "allowAlcohol": false,
   "dietaryRestrictions": [],
   "dislikedIngredients": [],
   "flavorPreferences": [],
-  "likedIngredients": [],
+  "likedIngredients": [
+    "beef"
+  ],
   "preferredCuisines": []
 }
