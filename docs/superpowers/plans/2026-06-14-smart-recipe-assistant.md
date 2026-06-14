@@ -102,7 +102,7 @@
 | 6 | 推荐排序、防重复和硬过滤/软降权 | ✅ 已完成 | `.venv/bin/python -m pytest -q` 通过，21 passed |
 | 7 | OpenRouter 客户端与 Agent ReAct 编排 | ✅ 已完成 | `.venv/bin/python -m pytest -q` 通过，25 passed |
 | 8 | FastAPI Chat SSE 集成 | ✅ 已完成 | `.venv/bin/python -m pytest -q` 通过，27 passed |
-| 9 | 前端 Vite Vue 基础、类型、API 和 SSE 解析 | ⏳ 待执行 | 覆盖流解析、HTTP 错误、非阻塞警告 |
+| 9 | 前端 Vite Vue 基础、类型、API 和 SSE 解析 | ✅ 已完成 | `npm test -- --run` 通过，2 passed；npm 安装使用项目本地 `.npm-cache` |
 | 10 | 前端 Chat UI、页签、卡片、Tool 轨迹和画像展示 | ⏳ 待执行 | 覆盖结构化展示和响应式布局 |
 | 11 | 全量验证、代码走读文档和审查准备 | ⏳ 待执行 | 跑后端/前端测试，生成走读文档 |
 
