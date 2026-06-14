@@ -12,9 +12,9 @@
 
 | 项目 | 内容 |
 |------|------|
-| 文档版本 | v0.1 |
-| 最近更新时间 | 2026-06-14 16:16:53 CST |
-| 文档状态 | 实现计划待执行 |
+| 文档版本 | v0.4 |
+| 最近更新时间 | 2026-06-14 17:52:19 CST |
+| 文档状态 | ✅ 计划已完成 |
 | 关联需求 | `智能食谱助手需求分析.md` v0.25 |
 | 关联设计 | `智能食谱助手技术设计.md` v0.23 |
 
@@ -103,8 +103,9 @@
 | 7 | OpenRouter 客户端与 Agent ReAct 编排 | ✅ 已完成 | `.venv/bin/python -m pytest -q` 通过，25 passed |
 | 8 | FastAPI Chat SSE 集成 | ✅ 已完成 | `.venv/bin/python -m pytest -q` 通过，27 passed |
 | 9 | 前端 Vite Vue 基础、类型、API 和 SSE 解析 | ✅ 已完成 | `npm test -- --run` 通过，2 passed；npm 安装使用项目本地 `.npm-cache` |
-| 10 | 前端 Chat UI、页签、卡片、Tool 轨迹和画像展示 | ⏳ 待执行 | 覆盖结构化展示和响应式布局 |
-| 11 | 全量验证、代码走读文档和审查准备 | ⏳ 待执行 | 跑后端/前端测试，生成走读文档 |
+| 10 | 前端 Chat UI、页签、卡片、Tool 轨迹和画像展示 | ✅ 已完成 | `npm test -- --run` 通过，6 passed；`npm run build` 通过 |
+| 10A | 验收补洞：默认 Agent 装配、OpenRouter Step 适配、卡片事件和 memory 持久化闭环 | ✅ 已完成 | `.venv/bin/python -m pytest -q` 通过，32 passed |
+| 11 | 全量验证、代码走读文档和审查准备 | ✅ 已完成 | 后端 32 passed；前端 6 passed；`npm run build` 通过；已生成 `智能食谱助手代码走读.md` |
 
 ## 4. 实现任务
 

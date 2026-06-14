@@ -1,12 +1,9 @@
-from typing import Any
-
 from fastapi import APIRouter, Request
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from app.core.errors import error_response
 from app.core.sse import format_sse
-from app.domain.models import SseEvent
 from app.services.conversation_lock import ConversationBusyError
 
 router = APIRouter(prefix="/api/chat", tags=["chat"])
@@ -40,17 +37,3 @@ async def chat_stream(payload: ChatStreamRequest, request: Request):
             await lock_context.__aexit__(None, None, None)
 
     return StreamingResponse(event_stream(), media_type="text/event-stream")
-
-
-class PlaceholderAgent:
-    async def run(self, message: str):
-        yield SseEvent(event="meta", data={"requestId": "req_placeholder"})
-        yield SseEvent(
-            event="done",
-            data={
-                "reply": "服务尚未完成 Agent 配置",
-                "cards": [],
-                "toolCalls": [],
-                "warnings": ["Agent 未配置，当前仅返回占位响应"],
-            },
-        )

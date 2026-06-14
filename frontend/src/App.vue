@@ -1,5 +1,7 @@
 <template>
-  <main class="app-shell">
-    智能食谱助手
-  </main>
+  <ChatPage />
 </template>
+
+<script setup lang="ts">
+import ChatPage from "./components/ChatPage.vue";
+</script>

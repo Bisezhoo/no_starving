@@ -49,3 +49,30 @@ export type CocktailCard = BaseCard & {
 };
 
 export type Card = MealCard | CocktailCard;
+
+export type ToolTraceItem = {
+  id?: string;
+  name: string;
+  status: string;
+  arguments?: Record<string, unknown>;
+  durationMs?: number;
+  resultCount?: number;
+  error?: string;
+};
+
+export type AssistantMessage = {
+  role: "assistant";
+  reply: string;
+  cards: Card[];
+  toolCalls: ToolTraceItem[];
+  warnings: string[];
+  profileUpdates?: Record<string, unknown>[];
+  error?: string;
+};
+
+export type UserMessage = {
+  role: "user";
+  content: string;
+};
+
+export type ChatMessage = UserMessage | AssistantMessage;

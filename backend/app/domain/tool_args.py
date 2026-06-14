@@ -127,6 +127,7 @@ def validate_get_cocktail_detail_args(args: dict[str, Any]) -> dict[str, Any]:
 
 
 def _base_search_args(args: dict[str, Any], allowed_fields: set[str]) -> dict[str, Any]:
+    _reject_invalid_json_args(args)
     validated: dict[str, Any] = {}
     for field, value in args.items():
         if field not in allowed_fields:
@@ -150,6 +151,7 @@ def _base_search_args(args: dict[str, Any], allowed_fields: set[str]) -> dict[st
 
 
 def _validate_id_args(args: dict[str, Any], id_field: str) -> dict[str, Any]:
+    _reject_invalid_json_args(args)
     value = _clean(args.get(id_field))
     if not value or not value.isdigit() or len(value) > 20:
         raise ToolValidationError(id_field, f"{id_field} must be a non-empty numeric string up to 20 characters", True)
@@ -190,3 +192,8 @@ def _clean(value: Any) -> str | None:
 
 def _has_cjk(value: str) -> bool:
     return bool(re.search(r"[\u4e00-\u9fff]", value))
+
+
+def _reject_invalid_json_args(args: dict[str, Any]) -> None:
+    if "__invalid_json__" in args:
+        raise ToolValidationError("arguments", "tool arguments must be valid JSON", True)

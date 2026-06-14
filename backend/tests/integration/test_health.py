@@ -1,12 +1,14 @@
 import pytest
 from httpx import ASGITransport, AsyncClient
 
+from app.core.config import Settings
 from app.main import create_app
 
 
 @pytest.mark.asyncio
-async def test_health_returns_success():
-    app = create_app()
+async def test_health_returns_success(tmp_path):
+    settings = Settings(openrouter_api_key="sk-test", openrouter_model="deepseek/deepseek-chat")
+    app = create_app(settings=settings, data_dir=tmp_path)
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         response = await client.get("/api/health")
 
