@@ -100,7 +100,7 @@
 | 4 | 外部 API Adapter 与 3 个 Tool | ✅ 已完成 | `.venv/bin/python -m pytest -q` 通过，12 passed |
 | 5 | 本地 JSON 持久化、画像、推荐历史和单活跃锁 | ✅ 已完成 | `.venv/bin/python -m pytest -q` 通过，19 passed |
 | 6 | 推荐排序、防重复和硬过滤/软降权 | ✅ 已完成 | `.venv/bin/python -m pytest -q` 通过，21 passed |
-| 7 | OpenRouter 客户端与 Agent ReAct 编排 | ⏳ 待执行 | 覆盖 DeepSeek 配置、预算熔断、`retryOf` 共享 |
+| 7 | OpenRouter 客户端与 Agent ReAct 编排 | ✅ 已完成 | `.venv/bin/python -m pytest -q` 通过，25 passed |
 | 8 | FastAPI Chat SSE 集成 | ⏳ 待执行 | 覆盖 HTTP 400/409、SSE 事件、`done.warnings` |
 | 9 | 前端 Vite Vue 基础、类型、API 和 SSE 解析 | ⏳ 待执行 | 覆盖流解析、HTTP 错误、非阻塞警告 |
 | 10 | 前端 Chat UI、页签、卡片、Tool 轨迹和画像展示 | ⏳ 待执行 | 覆盖结构化展示和响应式布局 |
