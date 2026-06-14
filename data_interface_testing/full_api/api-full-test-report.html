@@ -1,0 +1,963 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TheMealDB & TheCocktailDB 全接口测试报告</title>
+<style>
+  :root { --bg:#0f172a; --card:#1e293b; --border:#334155; --text:#e2e8f0; --muted:#94a3b8; --accent:#38bdf8; --green:#4ade80; --yellow:#fbbf24; --red:#f87171; --orange:#fb923c; --purple:#a78bfa; --pink:#f472b6; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'SF Mono','Cascadia Code','Fira Code','JetBrains Mono',monospace; background:var(--bg); color:var(--text); line-height:1.6; padding:2rem; }
+  .container { max-width:1200px; margin:0 auto; }
+  h1 { font-size:1.8rem; font-weight:700; margin-bottom:0.5rem; background:linear-gradient(135deg,var(--accent),var(--purple)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+  .subtitle { color:var(--muted); font-size:0.9rem; margin-bottom:2.5rem; padding-bottom:1.5rem; border-bottom:1px solid var(--border); }
+  .subtitle code { background:var(--card); padding:2px 8px; border-radius:4px; color:var(--accent); font-size:0.85rem; }
+  h2 { font-size:1.2rem; font-weight:600; margin:2.5rem 0 1rem; display:flex; align-items:center; gap:0.5rem; scroll-margin-top:2rem; }
+  h2 .icon { font-size:1.3rem; }
+  h3 { font-size:1rem; font-weight:600; margin:1.5rem 0 0.75rem; color:var(--muted); }
+  .stats-row { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:1rem; margin-bottom:2rem; }
+  .stat-card { background:var(--card); border:1px solid var(--border); border-radius:10px; padding:1.25rem; text-align:center; }
+  .stat-card .value { font-size:1.6rem; font-weight:700; line-height:1.2; }
+  .stat-card .label { font-size:0.75rem; color:var(--muted); margin-top:0.25rem; }
+  .stat-card.blue .value { color:var(--accent); }
+  .stat-card.green .value { color:var(--green); }
+  .stat-card.yellow .value { color:var(--yellow); }
+  .stat-card.red .value { color:var(--red); }
+  .stat-card.purple .value { color:var(--purple); }
+  .table-wrap { background:var(--card); border:1px solid var(--border); border-radius:10px; overflow-x:auto; margin-bottom:1.5rem; }
+  table { width:100%; border-collapse:collapse; font-size:0.82rem; }
+  thead th { background:rgba(56,189,248,0.08); text-align:left; padding:0.6rem 0.8rem; font-weight:600; color:var(--accent); border-bottom:1px solid var(--border); white-space:nowrap; position:sticky; top:0; }
+  tbody td { padding:0.5rem 0.8rem; border-bottom:1px solid rgba(51,65,85,0.5); }
+  tbody tr:last-child td { border-bottom:none; }
+  tbody tr:hover { background:rgba(56,189,248,0.04); }
+  .tag { display:inline-block; padding:2px 8px; border-radius:4px; font-size:0.72rem; font-weight:600; white-space:nowrap; }
+  .tag-red { background:rgba(248,113,113,0.15); color:var(--red); }
+  .tag-orange { background:rgba(251,146,60,0.15); color:var(--orange); }
+  .tag-yellow { background:rgba(251,191,36,0.15); color:var(--yellow); }
+  .tag-green { background:rgba(74,222,128,0.15); color:var(--green); }
+  .tag-blue { background:rgba(56,189,248,0.15); color:var(--accent); }
+  .mono { font-family:inherit; font-size:0.8rem; color:var(--accent); }
+  .code-block { background:#0c1222; border:1px solid var(--border); border-radius:8px; padding:1rem; font-size:0.78rem; line-height:1.6; overflow-x:auto; margin-bottom:1.5rem; color:var(--muted); white-space:pre-wrap; word-break:break-all; max-height:400px; }
+  .alert { background:var(--card); border:1px solid var(--border); border-left:4px solid var(--yellow); border-radius:0 10px 10px 0; padding:1rem 1.25rem; margin-bottom:1rem; font-size:0.85rem; }
+  .alert.red { border-left-color:var(--red); }
+  .alert.green { border-left-color:var(--green); }
+  .alert.blue { border-left-color:var(--accent); }
+  .alert strong { color:var(--yellow); }
+  .alert.red strong { color:var(--red); }
+  .alert.green strong { color:var(--green); }
+  .alert.blue strong { color:var(--accent); }
+  .bar-row { display:flex; align-items:center; gap:0.75rem; margin-bottom:0.4rem; font-size:0.82rem; }
+  .bar-label { width:200px; text-align:right; color:var(--muted); flex-shrink:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .bar-track { flex:1; height:20px; background:rgba(51,65,85,0.4); border-radius:4px; overflow:hidden; }
+  .bar-fill { height:100%; border-radius:4px; }
+  .bar-fill.green { background:linear-gradient(90deg,var(--green),#34d399); }
+  .bar-fill.yellow { background:linear-gradient(90deg,var(--yellow),#f59e0b); }
+  .bar-fill.red { background:linear-gradient(90deg,var(--red),#ef4444); }
+  .bar-fill.blue { background:linear-gradient(90deg,var(--accent),#818cf8); }
+  .bar-fill.purple { background:linear-gradient(90deg,var(--purple),#c084fc); }
+  .bar-value { width:45px; text-align:right; font-weight:600; flex-shrink:0; }
+  .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; margin-bottom:1.5rem; }
+  @media (max-width:700px) { .grid-2 { grid-template-columns:1fr; } .bar-label { width:130px; } }
+  .footer { margin-top:3rem; padding-top:1.5rem; border-top:1px solid var(--border); text-align:center; color:var(--muted); font-size:0.78rem; }
+  .toc { columns:2; column-gap:2rem; margin-bottom:2rem; }
+  .toc a { display:block; color:var(--accent); text-decoration:none; padding:0.2rem 0; font-size:0.85rem; }
+  .toc a:hover { text-decoration:underline; }
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>🍽️ TheMealDB & TheCocktailDB 全接口测试报告</h1>
+<p class="subtitle">
+  测试日期: <code>2026-06-14</code> &nbsp;|&nbsp;
+  每接口 <code>30 次</code> 调用采样 &nbsp;|&nbsp;
+  共 <code>11 个</code> 接口
+</p>
+
+<div class="toc">
+<a href="#ep1">1. TheMealDB search.php?s={name}</a><a href="#ep2">2. TheMealDB filter.php?i={ingredient}</a><a href="#ep3">3. TheMealDB filter.php?c={category}</a><a href="#ep4">4. TheMealDB filter.php?a={area}</a><a href="#ep5">5. TheMealDB lookup.php?i={id}</a><a href="#ep6">6. TheMealDB random.php</a><a href="#ep7">7. TheMealDB categories.php</a><a href="#ep8">8. TheCocktailDB search.php?s={name}</a><a href="#ep9">9. TheCocktailDB filter.php?i={ingredient}</a><a href="#ep10">10. TheCocktailDB lookup.php?i={id}</a><a href="#ep11">11. TheCocktailDB random.php</a>
+</div>
+
+<h2><span class="icon">📋</span> 测试总览</h2>
+<div class="table-wrap">
+<table>
+<thead><tr><th>#</th><th>接口</th><th>数据源</th><th>调用</th><th>去重结果</th><th>字段数</th></tr></thead>
+<tbody><tr><td>1</td><td class="mono">search.php?s={name}</td><td>TheMealDB</td><td>30 词搜索</td><td>332</td><td>54</td></tr>
+<tr><td>2</td><td class="mono">filter.php?i={ingredient}</td><td>TheMealDB</td><td>30 种食材</td><td>613</td><td>5</td></tr>
+<tr><td>3</td><td class="mono">filter.php?c={category}</td><td>TheMealDB</td><td>14 个分类</td><td>667</td><td>5</td></tr>
+<tr><td>4</td><td class="mono">filter.php?a={area}</td><td>TheMealDB</td><td>30 个地区</td><td>403</td><td>5</td></tr>
+<tr><td>5</td><td class="mono">lookup.php?i={id}</td><td>TheMealDB</td><td>30 个 ID</td><td>29</td><td>54</td></tr>
+<tr><td>6</td><td class="mono">random.php</td><td>TheMealDB</td><td>30 次随机</td><td>29</td><td>54</td></tr>
+<tr><td>7</td><td class="mono">categories.php</td><td>TheMealDB</td><td>1 次</td><td>14</td><td>4</td></tr>
+<tr><td>8</td><td class="mono">search.php?s={name}</td><td>TheCocktailDB</td><td>30 词搜索</td><td>162</td><td>51</td></tr>
+<tr><td>9</td><td class="mono">filter.php?i={ingredient}</td><td>TheCocktailDB</td><td>30 种食材</td><td>22</td><td>3</td></tr>
+<tr><td>10</td><td class="mono">lookup.php?i={id}</td><td>TheCocktailDB</td><td>30 个 ID</td><td>20</td><td>51</td></tr>
+<tr><td>11</td><td class="mono">random.php</td><td>TheCocktailDB</td><td>30 次随机</td><td>28</td><td>51</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="stats-row">
+  <div class="stat-card blue"><div class="value">11</div><div class="label">测试接口数</div></div>
+  <div class="stat-card green"><div class="value">2921</div><div class="label">去重记录总数</div></div>
+  <div class="stat-card purple"><div class="value">54 / 51</div><div class="label">详情接口字段数</div></div>
+  <div class="stat-card yellow"><div class="value">5 / 3</div><div class="label">filter 接口字段数</div></div>
+  <div class="stat-card red"><div class="value">6</div><div class="label">永远为空的字段</div></div>
+</div>
+
+
+    <h2 id="ep1"><span class="icon">1.</span> TheMealDB — <code>search.php?s={name}</code></h2>
+    <div class="stats-row" style="grid-template-columns:repeat(4,1fr);">
+      <div class="stat-card blue"><div class="value">30 词搜索</div><div class="label">调用次数</div></div>
+      <div class="stat-card green"><div class="value">332</div><div class="label">去重结果数</div></div>
+      <div class="stat-card purple"><div class="value">54</div><div class="label">返回字段数</div></div>
+      <div class="stat-card yellow"><div class="value">meals</div><div class="label">返回根 key</div></div>
+    </div>
+    <h3>字段缺失分析</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>字段</th><th>缺失率</th><th>有值</th><th>null</th><th>空串</th><th>样本值</th></tr></thead>
+        <tbody><tr><td class="mono">dateModified</td><td><span class="tag tag-yellow">48.2%</span></td><td>172</td><td>160</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">2025-12-08 09:30:20</td></tr>
+<tr><td class="mono">idMeal</td><td><span class="tag tag-green">0%</span></td><td>332</td><td>0</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">52795</td></tr>
+<tr><td class="mono">strArea</td><td><span class="tag tag-blue">8.1%</span></td><td>305</td><td>27</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">India</td></tr>
+<tr><td class="mono">strCategory</td><td><span class="tag tag-green">0%</span></td><td>332</td><td>0</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">Chicken</td></tr>
+<tr><td class="mono">strCountry</td><td><span class="tag tag-green">0%</span></td><td>332</td><td>0</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">India</td></tr>
+<tr><td class="mono">strCreativeCommonsConfirmed</td><td><span class="tag tag-red">100.0%</span></td><td>0</td><td>332</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">—</td></tr>
+<tr><td class="mono">strImageSource</td><td><span class="tag tag-red">100.0%</span></td><td>0</td><td>332</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">—</td></tr>
+<tr><td class="mono">strIngredient1</td><td><span class="tag tag-green">0%</span></td><td>332</td><td>0</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">Chicken</td></tr>
+<tr><td class="mono">strIngredient10</td><td><span class="tag tag-yellow">36.1%</span></td><td>212</td><td>2</td><td>118</td><td style="font-size:0.78rem;color:var(--muted)">Chilli powder</td></tr>
+<tr><td class="mono">strIngredient11</td><td><span class="tag tag-yellow">46.1%</span></td><td>179</td><td>2</td><td>151</td><td style="font-size:0.78rem;color:var(--muted)">Green chilli</td></tr>
+<tr><td class="mono">strIngredient12</td><td><span class="tag tag-orange">55.7%</span></td><td>147</td><td>4</td><td>181</td><td style="font-size:0.78rem;color:var(--muted)">Yogurt</td></tr>
+<tr><td class="mono">strIngredient13</td><td><span class="tag tag-orange">66.6%</span></td><td>111</td><td>5</td><td>216</td><td style="font-size:0.78rem;color:var(--muted)">Cream</td></tr>
+<tr><td class="mono">strIngredient14</td><td><span class="tag tag-orange">75.3%</span></td><td>82</td><td>6</td><td>244</td><td style="font-size:0.78rem;color:var(--muted)">fenugreek</td></tr>
+<tr><td class="mono">strIngredient15</td><td><span class="tag tag-red">82.5%</span></td><td>58</td><td>6</td><td>268</td><td style="font-size:0.78rem;color:var(--muted)">Garam masala</td></tr>
+<tr><td class="mono">strIngredient16</td><td><span class="tag tag-red">88.6%</span></td><td>38</td><td>11</td><td>283</td><td style="font-size:0.78rem;color:var(--muted)">Salt</td></tr>
+<tr><td class="mono">strIngredient17</td><td><span class="tag tag-red">91.3%</span></td><td>29</td><td>11</td><td>292</td><td style="font-size:0.78rem;color:var(--muted)">Black Olives</td></tr>
+<tr><td class="mono">strIngredient18</td><td><span class="tag tag-red">94.3%</span></td><td>19</td><td>12</td><td>301</td><td style="font-size:0.78rem;color:var(--muted)">Salt</td></tr>
+<tr><td class="mono">strIngredient19</td><td><span class="tag tag-red">96.1%</span></td><td>13</td><td>12</td><td>307</td><td style="font-size:0.78rem;color:var(--muted)">Pepper</td></tr>
+<tr><td class="mono">strIngredient2</td><td><span class="tag tag-green">0%</span></td><td>332</td><td>0</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">Onion</td></tr>
+<tr><td class="mono">strIngredient20</td><td><span class="tag tag-red">97.3%</span></td><td>9</td><td>13</td><td>310</td><td style="font-size:0.78rem;color:var(--muted)">Ginger</td></tr>
+<tr><td class="mono">strIngredient3</td><td><span class="tag tag-green">0%</span></td><td>332</td><td>0</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">Tomatoes</td></tr>
+<tr><td class="mono">strIngredient4</td><td><span class="tag tag-blue">0.3%</span></td><td>331</td><td>0</td><td>1</td><td style="font-size:0.78rem;color:var(--muted)">Garlic</td></tr>
+<tr><td class="mono">strIngredient5</td><td><span class="tag tag-blue">0.9%</span></td><td>329</td><td>0</td><td>3</td><td style="font-size:0.78rem;color:var(--muted)">Ginger paste</td></tr>
+<tr><td class="mono">strIngredient6</td><td><span class="tag tag-blue">3.9%</span></td><td>319</td><td>0</td><td>13</td><td style="font-size:0.78rem;color:var(--muted)">Vegetable oil</td></tr>
+<tr><td class="mono">strIngredient7</td><td><span class="tag tag-blue">9.0%</span></td><td>302</td><td>0</td><td>30</td><td style="font-size:0.78rem;color:var(--muted)">Cumin seeds</td></tr>
+<tr><td class="mono">strIngredient8</td><td><span class="tag tag-blue">18.7%</span></td><td>270</td><td>0</td><td>62</td><td style="font-size:0.78rem;color:var(--muted)">Coriander seeds</td></tr>
+<tr><td class="mono">strIngredient9</td><td><span class="tag tag-yellow">27.4%</span></td><td>241</td><td>2</td><td>89</td><td style="font-size:0.78rem;color:var(--muted)">Turmeric powder</td></tr>
+<tr><td class="mono">strInstructions</td><td><span class="tag tag-green">0%</span></td><td>332</td><td>0</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">Take a large pot or wok, big enough to cook all the chicken,</td></tr>
+<tr><td class="mono">strMeal</td><td><span class="tag tag-green">0%</span></td><td>332</td><td>0</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">Chicken Handi</td></tr>
+<tr><td class="mono">strMealAlternate</td><td><span class="tag tag-red">100.0%</span></td><td>0</td><td>332</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">—</td></tr>
+<tr><td class="mono">strMealThumb</td><td><span class="tag tag-green">0%</span></td><td>332</td><td>0</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">https://www.themealdb.com/images/media/meals/wyxwsp148697982</td></tr>
+<tr><td class="mono">strMeasure1</td><td><span class="tag tag-green">0%</span></td><td>332</td><td>0</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">1.2 kg</td></tr>
+<tr><td class="mono">strMeasure10</td><td><span class="tag tag-blue">15.4%</span></td><td>281</td><td>0</td><td>51</td><td style="font-size:0.78rem;color:var(--muted)">1 tsp</td></tr>
+<tr><td class="mono">strMeasure11</td><td><span class="tag tag-blue">18.7%</span></td><td>270</td><td>0</td><td>62</td><td style="font-size:0.78rem;color:var(--muted)">2</td></tr>
+<tr><td class="mono">strMeasure12</td><td><span class="tag tag-yellow">21.1%</span></td><td>262</td><td>0</td><td>70</td><td style="font-size:0.78rem;color:var(--muted)">1 cup</td></tr>
+<tr><td class="mono">strMeasure13</td><td><span class="tag tag-yellow">26.8%</span></td><td>243</td><td>0</td><td>89</td><td style="font-size:0.78rem;color:var(--muted)">¾ cup</td></tr>
+<tr><td class="mono">strMeasure14</td><td><span class="tag tag-yellow">29.5%</span></td><td>234</td><td>0</td><td>98</td><td style="font-size:0.78rem;color:var(--muted)">3 tsp Dried</td></tr>
+<tr><td class="mono">strMeasure15</td><td><span class="tag tag-yellow">31.3%</span></td><td>228</td><td>0</td><td>104</td><td style="font-size:0.78rem;color:var(--muted)">1 tsp</td></tr>
+<tr><td class="mono">strMeasure16</td><td><span class="tag tag-yellow">34.9%</span></td><td>216</td><td>6</td><td>110</td><td style="font-size:0.78rem;color:var(--muted)">To taste</td></tr>
+<tr><td class="mono">strMeasure17</td><td><span class="tag tag-yellow">36.4%</span></td><td>211</td><td>6</td><td>115</td><td style="font-size:0.78rem;color:var(--muted)"> </td></tr>
+<tr><td class="mono">strMeasure18</td><td><span class="tag tag-yellow">38.9%</span></td><td>203</td><td>6</td><td>123</td><td style="font-size:0.78rem;color:var(--muted)"> </td></tr>
+<tr><td class="mono">strMeasure19</td><td><span class="tag tag-yellow">39.2%</span></td><td>202</td><td>6</td><td>124</td><td style="font-size:0.78rem;color:var(--muted)"> </td></tr>
+<tr><td class="mono">strMeasure2</td><td><span class="tag tag-green">0%</span></td><td>332</td><td>0</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">5 thinly sliced</td></tr>
+<tr><td class="mono">strMeasure20</td><td><span class="tag tag-yellow">40.1%</span></td><td>199</td><td>6</td><td>127</td><td style="font-size:0.78rem;color:var(--muted)"> </td></tr>
+<tr><td class="mono">strMeasure3</td><td><span class="tag tag-green">0%</span></td><td>332</td><td>0</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">2 finely chopped</td></tr>
+<tr><td class="mono">strMeasure4</td><td><span class="tag tag-blue">0.3%</span></td><td>331</td><td>0</td><td>1</td><td style="font-size:0.78rem;color:var(--muted)">8 cloves chopped</td></tr>
+<tr><td class="mono">strMeasure5</td><td><span class="tag tag-green">0%</span></td><td>332</td><td>0</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">1 tbsp</td></tr>
+<tr><td class="mono">strMeasure6</td><td><span class="tag tag-blue">1.8%</span></td><td>326</td><td>0</td><td>6</td><td style="font-size:0.78rem;color:var(--muted)">¼ cup</td></tr>
+<tr><td class="mono">strMeasure7</td><td><span class="tag tag-blue">3.9%</span></td><td>319</td><td>0</td><td>13</td><td style="font-size:0.78rem;color:var(--muted)">2 tsp</td></tr>
+<tr><td class="mono">strMeasure8</td><td><span class="tag tag-blue">7.5%</span></td><td>307</td><td>0</td><td>25</td><td style="font-size:0.78rem;color:var(--muted)">3 tsp</td></tr>
+<tr><td class="mono">strMeasure9</td><td><span class="tag tag-blue">11.7%</span></td><td>293</td><td>0</td><td>39</td><td style="font-size:0.78rem;color:var(--muted)">1 tsp</td></tr>
+<tr><td class="mono">strSource</td><td><span class="tag tag-blue">5.7%</span></td><td>313</td><td>1</td><td>18</td><td style="font-size:0.78rem;color:var(--muted)">https://www.bbcgoodfood.com/recipes/sticky-chicken</td></tr>
+<tr><td class="mono">strTags</td><td><span class="tag tag-orange">65.4%</span></td><td>115</td><td>217</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">Spicy,Meat</td></tr>
+<tr><td class="mono">strYoutube</td><td><span class="tag tag-blue">11.7%</span></td><td>293</td><td>0</td><td>39</td><td style="font-size:0.78rem;color:var(--muted)">https://www.youtube.com/watch?v=IO0issT0Rmc</td></tr></tbody>
+      </table>
+    </div>
+    <h3>标准请求/响应样本</h3>
+    <div class="code-block">{
+  "meals": [
+    {
+      "idMeal": "52795",
+      "strMeal": "Chicken Handi",
+      "strMealAlternate": null,
+      "strCategory": "Chicken",
+      "strArea": "India",
+      "strCountry": "India",
+      "strInstructions": "Take a large pot or wok, big enough to cook all the chicken, and heat the oil in it. Once the oil is hot, add sliced onion and fry them until deep golden brown. Then take them out on a plate and set aside.\r\nTo the same pot, add the chopped garlic and sauté for a minute. Then add the chopped tomatoes and cook until tomatoes turn soft. This would take about 5 minutes.\r\nThen return the fried onion to the pot and stir. Add ginger paste and sauté well.\r\nNow add the cumin seeds, half of the coriander seeds and chopped green chillies. Give them a quick stir.\r\nNext goes in the spices – turmeric powder and red chilli powder. Sauté the spices well for couple of minutes.\r\nAdd the chicken pieces to the wok, season it with salt to taste and cook the chicken covered on medium-low heat until the chicken is almost cooked through. This would take about 15 minutes. Slowly sautéing the chicken will enhance the flavor, so do not expedite this step by putting it on high heat.\r\nWhen the oil separates from the spices, add the beaten yogurt keeping the heat on lowest so that the yogurt doesn’t split. Sprinkle the remaining coriander seeds and add half of the dried fenugreek leaves. Mix well.\r\nFinally add the cream and give a final mix to combine everything well.\r\nSprinkle the remaining kasuri methi and garam masala and serve the chicken handi hot with naan or rotis. Enjoy!",
+      "strMealThumb": "https://www.themealdb.com/images/media/meals/wyxwsp1486979827.jpg",
+      "strTags": null,
+      "strYoutube": "https://www.youtube.com/watch?v=IO0issT0Rmc",
+      "strIngredient1": "Chicken",
+      "strIngredient2": "Onion",
+      "strIngredient3": "Tomatoes",
+      "strIngredient4": "Garlic",
+      "strIngredient5": "Ginger paste",
+      "strIngredient6": "V</div>
+    
+    <h2 id="ep2"><span class="icon">2.</span> TheMealDB — <code>filter.php?i={ingredient}</code></h2>
+    <div class="stats-row" style="grid-template-columns:repeat(4,1fr);">
+      <div class="stat-card blue"><div class="value">30 种食材</div><div class="label">调用次数</div></div>
+      <div class="stat-card green"><div class="value">613</div><div class="label">去重结果数</div></div>
+      <div class="stat-card purple"><div class="value">5</div><div class="label">返回字段数</div></div>
+      <div class="stat-card yellow"><div class="value">meals</div><div class="label">返回根 key</div></div>
+    </div>
+    <h3>字段缺失分析</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>字段</th><th>缺失率</th><th>有值</th><th>null</th><th>空串</th><th>样本值</th></tr></thead>
+        <tbody><tr><td class="mono">idMeal</td><td><span class="tag tag-green">0%</span></td><td>613</td><td>0</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">53453</td></tr>
+<tr><td class="mono">strArea</td><td><span class="tag tag-blue">10.3%</span></td><td>550</td><td>63</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">United States</td></tr>
+<tr><td class="mono">strCountry</td><td><span class="tag tag-green">0%</span></td><td>613</td><td>0</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">Bangladesh</td></tr>
+<tr><td class="mono">strMeal</td><td><span class="tag tag-green">0%</span></td><td>613</td><td>0</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">Bengali Chicken Curry with Potatoes</td></tr>
+<tr><td class="mono">strMealThumb</td><td><span class="tag tag-green">0%</span></td><td>613</td><td>0</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">https://www.themealdb.com/images/media/meals/9ya6o7178026265</td></tr></tbody>
+      </table>
+    </div>
+    <h3>标准请求/响应样本</h3>
+    <div class="code-block">{
+  "meals": [
+    {
+      "strMeal": "Bengali Chicken Curry with Potatoes",
+      "strMealThumb": "https://www.themealdb.com/images/media/meals/9ya6o71780262651.jpg",
+      "idMeal": "53453",
+      "strArea": null,
+      "strCountry": "Bangladesh"
+    }
+  ]
+}</div>
+    
+    <h2 id="ep3"><span class="icon">3.</span> TheMealDB — <code>filter.php?c={category}</code></h2>
+    <div class="stats-row" style="grid-template-columns:repeat(4,1fr);">
+      <div class="stat-card blue"><div class="value">14 个分类</div><div class="label">调用次数</div></div>
+      <div class="stat-card green"><div class="value">667</div><div class="label">去重结果数</div></div>
+      <div class="stat-card purple"><div class="value">5</div><div class="label">返回字段数</div></div>
+      <div class="stat-card yellow"><div class="value">meals</div><div class="label">返回根 key</div></div>
+    </div>
+    <h3>字段缺失分析</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>字段</th><th>缺失率</th><th>有值</th><th>null</th><th>空串</th><th>样本值</th></tr></thead>
+        <tbody><tr><td class="mono">idMeal</td><td><span class="tag tag-green">0%</span></td><td>667</td><td>0</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">53281</td></tr>
+<tr><td class="mono">strArea</td><td><span class="tag tag-blue">9.9%</span></td><td>601</td><td>66</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">Algerian</td></tr>
+<tr><td class="mono">strCountry</td><td><span class="tag tag-green">0%</span></td><td>667</td><td>0</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">Algeria</td></tr>
+<tr><td class="mono">strMeal</td><td><span class="tag tag-green">0%</span></td><td>667</td><td>0</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">Algerian Kefta (Meatballs)</td></tr>
+<tr><td class="mono">strMealThumb</td><td><span class="tag tag-green">0%</span></td><td>667</td><td>0</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">https://www.themealdb.com/images/media/meals/8rfd4q176411299</td></tr></tbody>
+      </table>
+    </div>
+    <h3>标准请求/响应样本</h3>
+    <div class="code-block">{
+  "meals": [
+    {
+      "strMeal": "Algerian Kefta (Meatballs)",
+      "strMealThumb": "https://www.themealdb.com/images/media/meals/8rfd4q1764112993.jpg",
+      "idMeal": "53281",
+      "strArea": "Algerian",
+      "strCountry": "Algeria"
+    }
+  ]
+}</div>
+    
+    <h2 id="ep4"><span class="icon">4.</span> TheMealDB — <code>filter.php?a={area}</code></h2>
+    <div class="stats-row" style="grid-template-columns:repeat(4,1fr);">
+      <div class="stat-card blue"><div class="value">30 个地区</div><div class="label">调用次数</div></div>
+      <div class="stat-card green"><div class="value">403</div><div class="label">去重结果数</div></div>
+      <div class="stat-card purple"><div class="value">5</div><div class="label">返回字段数</div></div>
+      <div class="stat-card yellow"><div class="value">meals</div><div class="label">返回根 key</div></div>
+    </div>
+    <h3>字段缺失分析</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>字段</th><th>缺失率</th><th>有值</th><th>null</th><th>空串</th><th>样本值</th></tr></thead>
+        <tbody><tr><td class="mono">idMeal</td><td><span class="tag tag-green">0%</span></td><td>403</td><td>0</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">52885</td></tr>
+<tr><td class="mono">strArea</td><td><span class="tag tag-green">0%</span></td><td>403</td><td>0</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">British</td></tr>
+<tr><td class="mono">strCountry</td><td><span class="tag tag-green">0%</span></td><td>403</td><td>0</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">United Kingdom</td></tr>
+<tr><td class="mono">strMeal</td><td><span class="tag tag-green">0%</span></td><td>403</td><td>0</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)"> Bubble & Squeak</td></tr>
+<tr><td class="mono">strMealThumb</td><td><span class="tag tag-green">0%</span></td><td>403</td><td>0</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">https://www.themealdb.com/images/media/meals/xusqvw151163831</td></tr></tbody>
+      </table>
+    </div>
+    <h3>标准请求/响应样本</h3>
+    <div class="code-block">{
+  "meals": [
+    {
+      "strMeal": " Bubble & Squeak",
+      "strMealThumb": "https://www.themealdb.com/images/media/meals/xusqvw1511638311.jpg",
+      "idMeal": "52885",
+      "strArea": "British",
+      "strCountry": "United Kingdom"
+    }
+  ]
+}</div>
+    
+    <h2 id="ep5"><span class="icon">5.</span> TheMealDB — <code>lookup.php?i={id}</code></h2>
+    <div class="stats-row" style="grid-template-columns:repeat(4,1fr);">
+      <div class="stat-card blue"><div class="value">30 个 ID</div><div class="label">调用次数</div></div>
+      <div class="stat-card green"><div class="value">29</div><div class="label">去重结果数</div></div>
+      <div class="stat-card purple"><div class="value">54</div><div class="label">返回字段数</div></div>
+      <div class="stat-card yellow"><div class="value">meals</div><div class="label">返回根 key</div></div>
+    </div>
+    <h3>字段缺失分析</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>字段</th><th>缺失率</th><th>有值</th><th>null</th><th>空串</th><th>样本值</th></tr></thead>
+        <tbody><tr><td class="mono">dateModified</td><td><span class="tag tag-red">100.0%</span></td><td>0</td><td>29</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">—</td></tr>
+<tr><td class="mono">idMeal</td><td><span class="tag tag-green">0%</span></td><td>29</td><td>0</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">52772</td></tr>
+<tr><td class="mono">strArea</td><td><span class="tag tag-green">0%</span></td><td>29</td><td>0</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">Japanese</td></tr>
+<tr><td class="mono">strCategory</td><td><span class="tag tag-green">0%</span></td><td>29</td><td>0</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">Chicken</td></tr>
+<tr><td class="mono">strCountry</td><td><span class="tag tag-green">0%</span></td><td>29</td><td>0</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">Japan</td></tr>
+<tr><td class="mono">strCreativeCommonsConfirmed</td><td><span class="tag tag-red">100.0%</span></td><td>0</td><td>29</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">—</td></tr>
+<tr><td class="mono">strImageSource</td><td><span class="tag tag-red">100.0%</span></td><td>0</td><td>29</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">—</td></tr>
+<tr><td class="mono">strIngredient1</td><td><span class="tag tag-green">0%</span></td><td>29</td><td>0</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">soy sauce</td></tr>
+<tr><td class="mono">strIngredient10</td><td><span class="tag tag-yellow">27.6%</span></td><td>21</td><td>0</td><td>8</td><td style="font-size:0.78rem;color:var(--muted)">Chicken</td></tr>
+<tr><td class="mono">strIngredient11</td><td><span class="tag tag-yellow">34.5%</span></td><td>19</td><td>0</td><td>10</td><td style="font-size:0.78rem;color:var(--muted)">Egg</td></tr>
+<tr><td class="mono">strIngredient12</td><td><span class="tag tag-yellow">41.4%</span></td><td>17</td><td>0</td><td>12</td><td style="font-size:0.78rem;color:var(--muted)">Chinese broccoli</td></tr>
+<tr><td class="mono">strIngredient13</td><td><span class="tag tag-orange">55.2%</span></td><td>13</td><td>0</td><td>16</td><td style="font-size:0.78rem;color:var(--muted)">Butter</td></tr>
+<tr><td class="mono">strIngredient14</td><td><span class="tag tag-orange">65.5%</span></td><td>10</td><td>0</td><td>19</td><td style="font-size:0.78rem;color:var(--muted)">Salt</td></tr>
+<tr><td class="mono">strIngredient15</td><td><span class="tag tag-orange">65.5%</span></td><td>10</td><td>0</td><td>19</td><td style="font-size:0.78rem;color:var(--muted)">Pepper</td></tr>
+<tr><td class="mono">strIngredient16</td><td><span class="tag tag-orange">75.9%</span></td><td>7</td><td>4</td><td>18</td><td style="font-size:0.78rem;color:var(--muted)">Lemons</td></tr>
+<tr><td class="mono">strIngredient17</td><td><span class="tag tag-red">82.8%</span></td><td>5</td><td>4</td><td>20</td><td style="font-size:0.78rem;color:var(--muted)">Black Olives</td></tr>
+<tr><td class="mono">strIngredient18</td><td><span class="tag tag-red">89.7%</span></td><td>3</td><td>4</td><td>22</td><td style="font-size:0.78rem;color:var(--muted)">Salt</td></tr>
+<tr><td class="mono">strIngredient19</td><td><span class="tag tag-red">89.7%</span></td><td>3</td><td>4</td><td>22</td><td style="font-size:0.78rem;color:var(--muted)">Pepper</td></tr>
+<tr><td class="mono">strIngredient2</td><td><span class="tag tag-green">0%</span></td><td>29</td><td>0</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">water</td></tr>
+<tr><td class="mono">strIngredient20</td><td><span class="tag tag-red">93.1%</span></td><td>2</td><td>4</td><td>23</td><td style="font-size:0.78rem;color:var(--muted)">Kidney Beans</td></tr>
+<tr><td class="mono">strIngredient3</td><td><span class="tag tag-green">0%</span></td><td>29</td><td>0</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">brown sugar</td></tr>
+<tr><td class="mono">strIngredient4</td><td><span class="tag tag-green">0%</span></td><td>29</td><td>0</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">ground ginger</td></tr>
+<tr><td class="mono">strIngredient5</td><td><span class="tag tag-green">0%</span></td><td>29</td><td>0</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">minced garlic</td></tr>
+<tr><td class="mono">strIngredient6</td><td><span class="tag tag-green">0%</span></td><td>29</td><td>0</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">cornstarch</td></tr>
+<tr><td class="mono">strIngredient7</td><td><span class="tag tag-blue">3.4%</span></td><td>28</td><td>0</td><td>1</td><td style="font-size:0.78rem;color:var(--muted)">chicken breasts</td></tr>
+<tr><td class="mono">strIngredient8</td><td><span class="tag tag-blue">17.2%</span></td><td>24</td><td>0</td><td>5</td><td style="font-size:0.78rem;color:var(--muted)">stir-fry vegetables</td></tr>
+<tr><td class="mono">strIngredient9</td><td><span class="tag tag-blue">17.2%</span></td><td>24</td><td>0</td><td>5</td><td style="font-size:0.78rem;color:var(--muted)">brown rice</td></tr>
+<tr><td class="mono">strInstructions</td><td><span class="tag tag-green">0%</span></td><td>29</td><td>0</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">Preheat oven to 350° F. Spray a 9x13-inch baking pan with no</td></tr>
+<tr><td class="mono">strMeal</td><td><span class="tag tag-green">0%</span></td><td>29</td><td>0</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">Teriyaki Chicken Casserole</td></tr>
+<tr><td class="mono">strMealAlternate</td><td><span class="tag tag-red">100.0%</span></td><td>0</td><td>29</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">—</td></tr>
+<tr><td class="mono">strMealThumb</td><td><span class="tag tag-green">0%</span></td><td>29</td><td>0</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">https://www.themealdb.com/images/media/meals/wvpsxx146825632</td></tr>
+<tr><td class="mono">strMeasure1</td><td><span class="tag tag-green">0%</span></td><td>29</td><td>0</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">3/4 cup</td></tr>
+<tr><td class="mono">strMeasure10</td><td><span class="tag tag-yellow">27.6%</span></td><td>21</td><td>0</td><td>8</td><td style="font-size:0.78rem;color:var(--muted)">1 cup</td></tr>
+<tr><td class="mono">strMeasure11</td><td><span class="tag tag-yellow">34.5%</span></td><td>19</td><td>0</td><td>10</td><td style="font-size:0.78rem;color:var(--muted)">1</td></tr>
+<tr><td class="mono">strMeasure12</td><td><span class="tag tag-yellow">41.4%</span></td><td>17</td><td>0</td><td>12</td><td style="font-size:0.78rem;color:var(--muted)">4 cups</td></tr>
+<tr><td class="mono">strMeasure13</td><td><span class="tag tag-orange">55.2%</span></td><td>13</td><td>0</td><td>16</td><td style="font-size:0.78rem;color:var(--muted)">25g</td></tr>
+<tr><td class="mono">strMeasure14</td><td><span class="tag tag-orange">65.5%</span></td><td>10</td><td>0</td><td>19</td><td style="font-size:0.78rem;color:var(--muted)">pinch</td></tr>
+<tr><td class="mono">strMeasure15</td><td><span class="tag tag-orange">65.5%</span></td><td>10</td><td>0</td><td>19</td><td style="font-size:0.78rem;color:var(--muted)">pinch</td></tr>
+<tr><td class="mono">strMeasure16</td><td><span class="tag tag-orange">75.9%</span></td><td>7</td><td>4</td><td>18</td><td style="font-size:0.78rem;color:var(--muted)">2</td></tr>
+<tr><td class="mono">strMeasure17</td><td><span class="tag tag-red">82.8%</span></td><td>5</td><td>4</td><td>20</td><td style="font-size:0.78rem;color:var(--muted)">100g </td></tr>
+<tr><td class="mono">strMeasure18</td><td><span class="tag tag-red">89.7%</span></td><td>3</td><td>4</td><td>22</td><td style="font-size:0.78rem;color:var(--muted)">to serve</td></tr>
+<tr><td class="mono">strMeasure19</td><td><span class="tag tag-red">89.7%</span></td><td>3</td><td>4</td><td>22</td><td style="font-size:0.78rem;color:var(--muted)">to serve</td></tr>
+<tr><td class="mono">strMeasure2</td><td><span class="tag tag-green">0%</span></td><td>29</td><td>0</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">1/2 cup</td></tr>
+<tr><td class="mono">strMeasure20</td><td><span class="tag tag-red">93.1%</span></td><td>2</td><td>4</td><td>23</td><td style="font-size:0.78rem;color:var(--muted)">800g</td></tr>
+<tr><td class="mono">strMeasure3</td><td><span class="tag tag-green">0%</span></td><td>29</td><td>0</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">1/4 cup</td></tr>
+<tr><td class="mono">strMeasure4</td><td><span class="tag tag-green">0%</span></td><td>29</td><td>0</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">1/2 teaspoon</td></tr>
+<tr><td class="mono">strMeasure5</td><td><span class="tag tag-green">0%</span></td><td>29</td><td>0</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">1/2 teaspoon</td></tr>
+<tr><td class="mono">strMeasure6</td><td><span class="tag tag-green">0%</span></td><td>29</td><td>0</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">4 Tablespoons</td></tr>
+<tr><td class="mono">strMeasure7</td><td><span class="tag tag-blue">3.4%</span></td><td>28</td><td>0</td><td>1</td><td style="font-size:0.78rem;color:var(--muted)">2</td></tr>
+<tr><td class="mono">strMeasure8</td><td><span class="tag tag-blue">17.2%</span></td><td>24</td><td>0</td><td>5</td><td style="font-size:0.78rem;color:var(--muted)">1 (12 oz.)</td></tr>
+<tr><td class="mono">strMeasure9</td><td><span class="tag tag-blue">17.2%</span></td><td>24</td><td>0</td><td>5</td><td style="font-size:0.78rem;color:var(--muted)">3 cups</td></tr>
+<tr><td class="mono">strSource</td><td><span class="tag tag-blue">10.3%</span></td><td>26</td><td>3</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">http://www.goodtoknow.co.uk/recipes/536028/chocolate-gateau</td></tr>
+<tr><td class="mono">strTags</td><td><span class="tag tag-blue">6.9%</span></td><td>27</td><td>2</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">Meat,Casserole</td></tr>
+<tr><td class="mono">strYoutube</td><td><span class="tag tag-green">0%</span></td><td>29</td><td>0</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">https://www.youtube.com/watch?v=4aZr5hZXP_s</td></tr></tbody>
+      </table>
+    </div>
+    <h3>标准请求/响应样本</h3>
+    <div class="code-block">{
+  "meals": [
+    {
+      "idMeal": "53038",
+      "strMeal": "Mustard champ",
+      "strMealAlternate": null,
+      "strCategory": "Side",
+      "strArea": "Irish",
+      "strCountry": "Ireland",
+      "strInstructions": "STEP 1\r\nBoil the potatoes for 15 mins or until tender. Drain, then mash.\r\n\r\nSTEP 2\r\nHeat the milk and half the butter in the corner of the pan, then beat into the mash, along with the wholegrain mustard.\r\n\r\nSTEP 3\r\nGently fry the spring onions in the remaining butter for 2 mins until just soft but still a perky green. Fold into the mash and serve. Great with gammon or to top a fish pie.",
+      "strMealThumb": "https://www.themealdb.com/images/media/meals/o7p9581608589317.jpg",
+      "strTags": null,
+      "strYoutube": "https://www.youtube.com/watch?v=_iKllHSC978",
+      "strIngredient1": "Potatoes",
+      "strIngredient2": "Milk",
+      "strIngredient3": "Butter",
+      "strIngredient4": "Mustard",
+      "strIngredient5": "Spring Onions",
+      "strIngredient6": "Spring Onions",
+      "strIngredient7": "",
+      "strIngredient8": "",
+      "strIngredient9": "",
+      "strIngredient10": "",
+      "strIngredient11": "",
+      "strIngredient12": "",
+      "strIngredient13": "",
+      "strIngredient14": "",
+      "strIngredient15": "",
+      "strIngredient16": "",
+      "strIngredient17": "",
+      "strIngredient18": "",
+      "strIngredient19": "",
+      "strIngredient20": "",
+      "strMeasure1": "1kg",
+      "strMeasure2": "200ml",
+      "strMeasure3": "50g",
+      "strMeasure4": "2 tbs",
+      "strMeasure5": "Bunch",
+      "strMeasure6": "Bunch",
+      "strMeasure7": " ",
+      "strMeasure8": " ",
+      "strMeasure9": " ",
+      "strMeasure10": " ",
+      "strMeasure11": " ",
+      "strMeasure12": " ",
+      "strMeasure13": " ",
+      "strMeasure14": " ",
+      "strMeasure15": " ",
+      "strMeasure16": " ",
+      "strMeasure17": " ",
+      "strMeasure18": " ",
+      "strMeasure19": " ",
+      "strMeasure20": " ",
+      "strSource</div>
+    
+    <h2 id="ep6"><span class="icon">6.</span> TheMealDB — <code>random.php</code></h2>
+    <div class="stats-row" style="grid-template-columns:repeat(4,1fr);">
+      <div class="stat-card blue"><div class="value">30 次随机</div><div class="label">调用次数</div></div>
+      <div class="stat-card green"><div class="value">29</div><div class="label">去重结果数</div></div>
+      <div class="stat-card purple"><div class="value">54</div><div class="label">返回字段数</div></div>
+      <div class="stat-card yellow"><div class="value">meals</div><div class="label">返回根 key</div></div>
+    </div>
+    <h3>字段缺失分析</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>字段</th><th>缺失率</th><th>有值</th><th>null</th><th>空串</th><th>样本值</th></tr></thead>
+        <tbody><tr><td class="mono">dateModified</td><td><span class="tag tag-orange">58.6%</span></td><td>12</td><td>17</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">2025-11-29 20:22:39</td></tr>
+<tr><td class="mono">idMeal</td><td><span class="tag tag-green">0%</span></td><td>29</td><td>0</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">52817</td></tr>
+<tr><td class="mono">strArea</td><td><span class="tag tag-blue">3.4%</span></td><td>28</td><td>1</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">United States</td></tr>
+<tr><td class="mono">strCategory</td><td><span class="tag tag-green">0%</span></td><td>29</td><td>0</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">Vegetarian</td></tr>
+<tr><td class="mono">strCountry</td><td><span class="tag tag-green">0%</span></td><td>29</td><td>0</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">United States</td></tr>
+<tr><td class="mono">strCreativeCommonsConfirmed</td><td><span class="tag tag-red">100.0%</span></td><td>0</td><td>29</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">—</td></tr>
+<tr><td class="mono">strImageSource</td><td><span class="tag tag-red">100.0%</span></td><td>0</td><td>29</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">—</td></tr>
+<tr><td class="mono">strIngredient1</td><td><span class="tag tag-green">0%</span></td><td>29</td><td>0</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">Olive Oil</td></tr>
+<tr><td class="mono">strIngredient10</td><td><span class="tag tag-yellow">31.0%</span></td><td>20</td><td>0</td><td>9</td><td style="font-size:0.78rem;color:var(--muted)">Salt</td></tr>
+<tr><td class="mono">strIngredient11</td><td><span class="tag tag-yellow">44.8%</span></td><td>16</td><td>0</td><td>13</td><td style="font-size:0.78rem;color:var(--muted)">Black Pepper</td></tr>
+<tr><td class="mono">strIngredient12</td><td><span class="tag tag-orange">51.7%</span></td><td>14</td><td>0</td><td>15</td><td style="font-size:0.78rem;color:var(--muted)">thyme</td></tr>
+<tr><td class="mono">strIngredient13</td><td><span class="tag tag-orange">65.5%</span></td><td>10</td><td>1</td><td>18</td><td style="font-size:0.78rem;color:var(--muted)">Rosemary</td></tr>
+<tr><td class="mono">strIngredient14</td><td><span class="tag tag-orange">72.4%</span></td><td>8</td><td>0</td><td>21</td><td style="font-size:0.78rem;color:var(--muted)">bay leaves</td></tr>
+<tr><td class="mono">strIngredient15</td><td><span class="tag tag-orange">79.3%</span></td><td>6</td><td>0</td><td>23</td><td style="font-size:0.78rem;color:var(--muted)">parsley</td></tr>
+<tr><td class="mono">strIngredient16</td><td><span class="tag tag-red">93.1%</span></td><td>2</td><td>0</td><td>27</td><td style="font-size:0.78rem;color:var(--muted)">chestnut mushroom</td></tr>
+<tr><td class="mono">strIngredient17</td><td><span class="tag tag-red">93.1%</span></td><td>2</td><td>0</td><td>27</td><td style="font-size:0.78rem;color:var(--muted)">plain flour</td></tr>
+<tr><td class="mono">strIngredient18</td><td><span class="tag tag-red">93.1%</span></td><td>2</td><td>0</td><td>27</td><td style="font-size:0.78rem;color:var(--muted)">butter</td></tr>
+<tr><td class="mono">strIngredient19</td><td><span class="tag tag-red">96.6%</span></td><td>1</td><td>0</td><td>28</td><td style="font-size:0.78rem;color:var(--muted)">Ground Cumin</td></tr>
+<tr><td class="mono">strIngredient2</td><td><span class="tag tag-green">0%</span></td><td>29</td><td>0</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">Egg Plants</td></tr>
+<tr><td class="mono">strIngredient20</td><td><span class="tag tag-red">96.6%</span></td><td>1</td><td>0</td><td>28</td><td style="font-size:0.78rem;color:var(--muted)">Peanuts</td></tr>
+<tr><td class="mono">strIngredient3</td><td><span class="tag tag-green">0%</span></td><td>29</td><td>0</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">Harissa Spice</td></tr>
+<tr><td class="mono">strIngredient4</td><td><span class="tag tag-blue">3.4%</span></td><td>28</td><td>0</td><td>1</td><td style="font-size:0.78rem;color:var(--muted)">Chickpeas</td></tr>
+<tr><td class="mono">strIngredient5</td><td><span class="tag tag-blue">6.9%</span></td><td>27</td><td>0</td><td>2</td><td style="font-size:0.78rem;color:var(--muted)">Cherry Tomatoes</td></tr>
+<tr><td class="mono">strIngredient6</td><td><span class="tag tag-blue">10.3%</span></td><td>26</td><td>0</td><td>3</td><td style="font-size:0.78rem;color:var(--muted)">Greek yogurt</td></tr>
+<tr><td class="mono">strIngredient7</td><td><span class="tag tag-blue">10.3%</span></td><td>26</td><td>0</td><td>3</td><td style="font-size:0.78rem;color:var(--muted)">Ground cumin</td></tr>
+<tr><td class="mono">strIngredient8</td><td><span class="tag tag-blue">17.2%</span></td><td>24</td><td>0</td><td>5</td><td style="font-size:0.78rem;color:var(--muted)">Parsley</td></tr>
+<tr><td class="mono">strIngredient9</td><td><span class="tag tag-yellow">20.7%</span></td><td>23</td><td>0</td><td>6</td><td style="font-size:0.78rem;color:var(--muted)">Butter</td></tr>
+<tr><td class="mono">strInstructions</td><td><span class="tag tag-green">0%</span></td><td>29</td><td>0</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">Heat the oil in a 12-inch skillet over high heat until shimm</td></tr>
+<tr><td class="mono">strMeal</td><td><span class="tag tag-green">0%</span></td><td>29</td><td>0</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">Stovetop Eggplant With Harissa, Chickpeas, and Cumin Yogurt</td></tr>
+<tr><td class="mono">strMealAlternate</td><td><span class="tag tag-red">100.0%</span></td><td>0</td><td>29</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">—</td></tr>
+<tr><td class="mono">strMealThumb</td><td><span class="tag tag-green">0%</span></td><td>29</td><td>0</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">https://www.themealdb.com/images/media/meals/yqwtvu148742602</td></tr>
+<tr><td class="mono">strMeasure1</td><td><span class="tag tag-green">0%</span></td><td>29</td><td>0</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">4 tablespoons</td></tr>
+<tr><td class="mono">strMeasure10</td><td><span class="tag tag-yellow">20.7%</span></td><td>23</td><td>0</td><td>6</td><td style="font-size:0.78rem;color:var(--muted)">1/2 tsp</td></tr>
+<tr><td class="mono">strMeasure11</td><td><span class="tag tag-yellow">20.7%</span></td><td>23</td><td>0</td><td>6</td><td style="font-size:0.78rem;color:var(--muted)">1/4 tsp</td></tr>
+<tr><td class="mono">strMeasure12</td><td><span class="tag tag-yellow">20.7%</span></td><td>23</td><td>0</td><td>6</td><td style="font-size:0.78rem;color:var(--muted)"> </td></tr>
+<tr><td class="mono">strMeasure13</td><td><span class="tag tag-yellow">27.6%</span></td><td>21</td><td>0</td><td>8</td><td style="font-size:0.78rem;color:var(--muted)"> </td></tr>
+<tr><td class="mono">strMeasure14</td><td><span class="tag tag-yellow">31.0%</span></td><td>20</td><td>0</td><td>9</td><td style="font-size:0.78rem;color:var(--muted)"> </td></tr>
+<tr><td class="mono">strMeasure15</td><td><span class="tag tag-yellow">31.0%</span></td><td>20</td><td>0</td><td>9</td><td style="font-size:0.78rem;color:var(--muted)"> </td></tr>
+<tr><td class="mono">strMeasure16</td><td><span class="tag tag-yellow">41.4%</span></td><td>17</td><td>0</td><td>12</td><td style="font-size:0.78rem;color:var(--muted)"> </td></tr>
+<tr><td class="mono">strMeasure17</td><td><span class="tag tag-yellow">41.4%</span></td><td>17</td><td>0</td><td>12</td><td style="font-size:0.78rem;color:var(--muted)"> </td></tr>
+<tr><td class="mono">strMeasure18</td><td><span class="tag tag-yellow">41.4%</span></td><td>17</td><td>0</td><td>12</td><td style="font-size:0.78rem;color:var(--muted)"> </td></tr>
+<tr><td class="mono">strMeasure19</td><td><span class="tag tag-yellow">44.8%</span></td><td>16</td><td>0</td><td>13</td><td style="font-size:0.78rem;color:var(--muted)"> </td></tr>
+<tr><td class="mono">strMeasure2</td><td><span class="tag tag-green">0%</span></td><td>29</td><td>0</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">6 small</td></tr>
+<tr><td class="mono">strMeasure20</td><td><span class="tag tag-yellow">44.8%</span></td><td>16</td><td>0</td><td>13</td><td style="font-size:0.78rem;color:var(--muted)"> </td></tr>
+<tr><td class="mono">strMeasure3</td><td><span class="tag tag-green">0%</span></td><td>29</td><td>0</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">½ tablespoon</td></tr>
+<tr><td class="mono">strMeasure4</td><td><span class="tag tag-green">0%</span></td><td>29</td><td>0</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">1 can</td></tr>
+<tr><td class="mono">strMeasure5</td><td><span class="tag tag-green">0%</span></td><td>29</td><td>0</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">2 cups halved</td></tr>
+<tr><td class="mono">strMeasure6</td><td><span class="tag tag-blue">3.4%</span></td><td>28</td><td>0</td><td>1</td><td style="font-size:0.78rem;color:var(--muted)">1 1/2 cups</td></tr>
+<tr><td class="mono">strMeasure7</td><td><span class="tag tag-blue">3.4%</span></td><td>28</td><td>0</td><td>1</td><td style="font-size:0.78rem;color:var(--muted)">1 tablespoon</td></tr>
+<tr><td class="mono">strMeasure8</td><td><span class="tag tag-blue">10.3%</span></td><td>26</td><td>0</td><td>3</td><td style="font-size:0.78rem;color:var(--muted)">½ cup </td></tr>
+<tr><td class="mono">strMeasure9</td><td><span class="tag tag-blue">13.8%</span></td><td>25</td><td>0</td><td>4</td><td style="font-size:0.78rem;color:var(--muted)">1/2 cup</td></tr>
+<tr><td class="mono">strSource</td><td><span class="tag tag-blue">6.9%</span></td><td>27</td><td>0</td><td>2</td><td style="font-size:0.78rem;color:var(--muted)">http://www.seriouseats.com/2014/09/one-pot-wonders-stovetop-</td></tr>
+<tr><td class="mono">strTags</td><td><span class="tag tag-orange">65.5%</span></td><td>10</td><td>19</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">Vegetarian</td></tr>
+<tr><td class="mono">strYoutube</td><td><span class="tag tag-blue">10.3%</span></td><td>26</td><td>0</td><td>3</td><td style="font-size:0.78rem;color:var(--muted)">https://www.youtube.com/watch?v=uYB-1xJp4lg</td></tr></tbody>
+      </table>
+    </div>
+    <h3>标准请求/响应样本</h3>
+    <div class="code-block">{
+  "meals": [
+    {
+      "idMeal": "53102",
+      "strMeal": "Squid, chickpea & chorizo salad",
+      "strMealAlternate": null,
+      "strCategory": "Seafood",
+      "strArea": "Australian",
+      "strCountry": "Australia",
+      "strInstructions": "step 1\r\nCook the peppers whole under a grill, on a barbecue or griddle, until completely charred. Place the peppers in a bowl, cover with a plate until cool enough to handle, then peel, deseed and finely slice. In a large bowl mix the peppers and any juices with the chickpeas, parsley, chilli and garlic. Set aside.\r\n\r\nstep 2\r\nHeat a large frying pan until smoking. Working quickly and carefully, add a splash of oil to the pan, then the squid. Stir-fry for about 30 secs. Scatter the chorizo over the squid, continue to cook for 30 secs more, then tip into the bowl with the peppers. Season everything with salt and pepper, then dress with the remaining oil, lemon juice and lemon zest. Mix together, pile onto a platter and let everyone help themselves.",
+      "strMealThumb": "https://www.themealdb.com/images/media/meals/wsu0rc1761848482.jpg",
+      "strTags": null,
+      "strYoutube": "https://www.bbcgoodfood.com/recipes/squid-chickpea-chorizo-salad",
+      "strIngredient1": "Red Pepper",
+      "strIngredient2": "Can of chickpeas",
+      "strIngredient3": "Parsley",
+      "strIngredient4": "Red Chilli",
+      "strIngredient5": "Garlic Clove",
+      "strIngredient6": "Olive Oil",
+      "strIngredient7": "Squid",
+      "strIngredient8": "Chorizo",
+      "strIngredient9": "Lemon",
+      "strIngredient10": "",
+      "strIngredient11": "",
+      "strIngredient12": "",
+      "strIngredient13": "",
+      "strIngredient14": "",
+      "strIngredient15": "",
+      "strIngredient16": "",
+      "strIngredient17": "",
+      "strIngredient18": "",
+      "strIngredient19": "",
+      "strIngredient20": "",
+      "strMeasure1": "4",
+      "strMeasure2": "2 400g Cans",
+      "strMeasure3": "Bunch",
+      "strMeasure4": "1",
+      "st</div>
+    
+    <h2 id="ep7"><span class="icon">7.</span> TheMealDB — <code>categories.php</code></h2>
+    <div class="stats-row" style="grid-template-columns:repeat(4,1fr);">
+      <div class="stat-card blue"><div class="value">1 次</div><div class="label">调用次数</div></div>
+      <div class="stat-card green"><div class="value">14</div><div class="label">去重结果数</div></div>
+      <div class="stat-card purple"><div class="value">4</div><div class="label">返回字段数</div></div>
+      <div class="stat-card yellow"><div class="value">categories</div><div class="label">返回根 key</div></div>
+    </div>
+    <h3>字段缺失分析</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>字段</th><th>缺失率</th><th>有值</th><th>null</th><th>空串</th><th>样本值</th></tr></thead>
+        <tbody><tr><td class="mono">idCategory</td><td><span class="tag tag-green">0%</span></td><td>14</td><td>0</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">1</td></tr>
+<tr><td class="mono">strCategory</td><td><span class="tag tag-green">0%</span></td><td>14</td><td>0</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">Beef</td></tr>
+<tr><td class="mono">strCategoryDescription</td><td><span class="tag tag-green">0%</span></td><td>14</td><td>0</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">Beef is the culinary name for meat from cattle, particularly</td></tr>
+<tr><td class="mono">strCategoryThumb</td><td><span class="tag tag-green">0%</span></td><td>14</td><td>0</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">https://www.themealdb.com/images/category/beef.png</td></tr></tbody>
+      </table>
+    </div>
+    <h3>标准请求/响应样本</h3>
+    <div class="code-block">{
+  "categories": [
+    {
+      "idCategory": "1",
+      "strCategory": "Beef",
+      "strCategoryThumb": "https://www.themealdb.com/images/category/beef.png",
+      "strCategoryDescription": "Beef is the culinary name for meat from cattle, particularly skeletal muscle. Humans have been eating beef since prehistoric times.[1] Beef is a source of high-quality protein and essential nutrients.[2]"
+    }
+  ]
+}</div>
+    
+    <h2 id="ep8"><span class="icon">8.</span> TheCocktailDB — <code>search.php?s={name}</code></h2>
+    <div class="stats-row" style="grid-template-columns:repeat(4,1fr);">
+      <div class="stat-card blue"><div class="value">30 词搜索</div><div class="label">调用次数</div></div>
+      <div class="stat-card green"><div class="value">162</div><div class="label">去重结果数</div></div>
+      <div class="stat-card purple"><div class="value">51</div><div class="label">返回字段数</div></div>
+      <div class="stat-card yellow"><div class="value">drinks</div><div class="label">返回根 key</div></div>
+    </div>
+    <h3>字段缺失分析</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>字段</th><th>缺失率</th><th>有值</th><th>null</th><th>空串</th><th>样本值</th></tr></thead>
+        <tbody><tr><td class="mono">dateModified</td><td><span class="tag tag-blue">15.4%</span></td><td>137</td><td>25</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">2015-08-18 14:42:59</td></tr>
+<tr><td class="mono">idDrink</td><td><span class="tag tag-green">0%</span></td><td>162</td><td>0</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">11007</td></tr>
+<tr><td class="mono">strAlcoholic</td><td><span class="tag tag-green">0%</span></td><td>162</td><td>0</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">Alcoholic</td></tr>
+<tr><td class="mono">strCategory</td><td><span class="tag tag-green">0%</span></td><td>162</td><td>0</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">Ordinary Drink</td></tr>
+<tr><td class="mono">strCreativeCommonsConfirmed</td><td><span class="tag tag-green">0%</span></td><td>162</td><td>0</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">Yes</td></tr>
+<tr><td class="mono">strDrink</td><td><span class="tag tag-green">0%</span></td><td>162</td><td>0</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">Margarita</td></tr>
+<tr><td class="mono">strDrinkAlternate</td><td><span class="tag tag-red">100.0%</span></td><td>0</td><td>162</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">—</td></tr>
+<tr><td class="mono">strDrinkThumb</td><td><span class="tag tag-green">0%</span></td><td>162</td><td>0</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">https://www.thecocktaildb.com/images/media/drink/5noda615895</td></tr>
+<tr><td class="mono">strGlass</td><td><span class="tag tag-green">0%</span></td><td>162</td><td>0</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">Cocktail glass</td></tr>
+<tr><td class="mono">strIBA</td><td><span class="tag tag-red">86.4%</span></td><td>22</td><td>140</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">Contemporary Classics</td></tr>
+<tr><td class="mono">strImageAttribution</td><td><span class="tag tag-red">90.7%</span></td><td>15</td><td>147</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">Cocktailmarler</td></tr>
+<tr><td class="mono">strImageSource</td><td><span class="tag tag-red">84.0%</span></td><td>26</td><td>136</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">https://commons.wikimedia.org/wiki/File:Klassiche_Margarita.</td></tr>
+<tr><td class="mono">strIngredient1</td><td><span class="tag tag-green">0%</span></td><td>162</td><td>0</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">Tequila</td></tr>
+<tr><td class="mono">strIngredient10</td><td><span class="tag tag-red">100.0%</span></td><td>0</td><td>162</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">—</td></tr>
+<tr><td class="mono">strIngredient11</td><td><span class="tag tag-red">100.0%</span></td><td>0</td><td>162</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">—</td></tr>
+<tr><td class="mono">strIngredient12</td><td><span class="tag tag-red">100.0%</span></td><td>0</td><td>162</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">—</td></tr>
+<tr><td class="mono">strIngredient13</td><td><span class="tag tag-red">100.0%</span></td><td>0</td><td>162</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">—</td></tr>
+<tr><td class="mono">strIngredient14</td><td><span class="tag tag-red">100.0%</span></td><td>0</td><td>162</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">—</td></tr>
+<tr><td class="mono">strIngredient15</td><td><span class="tag tag-red">100.0%</span></td><td>0</td><td>162</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">—</td></tr>
+<tr><td class="mono">strIngredient2</td><td><span class="tag tag-green">0%</span></td><td>162</td><td>0</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">Triple sec</td></tr>
+<tr><td class="mono">strIngredient3</td><td><span class="tag tag-blue">11.1%</span></td><td>144</td><td>18</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">Lime juice</td></tr>
+<tr><td class="mono">strIngredient4</td><td><span class="tag tag-yellow">29.6%</span></td><td>114</td><td>48</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">Salt</td></tr>
+<tr><td class="mono">strIngredient5</td><td><span class="tag tag-orange">51.2%</span></td><td>79</td><td>83</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">Strawberries</td></tr>
+<tr><td class="mono">strIngredient6</td><td><span class="tag tag-orange">74.7%</span></td><td>41</td><td>121</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">Salt</td></tr>
+<tr><td class="mono">strIngredient7</td><td><span class="tag tag-red">92.0%</span></td><td>13</td><td>149</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">Mint</td></tr>
+<tr><td class="mono">strIngredient8</td><td><span class="tag tag-red">97.5%</span></td><td>4</td><td>158</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">Fresca</td></tr>
+<tr><td class="mono">strIngredient9</td><td><span class="tag tag-red">100.0%</span></td><td>0</td><td>162</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">—</td></tr>
+<tr><td class="mono">strInstructions</td><td><span class="tag tag-green">0%</span></td><td>162</td><td>0</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">Rub the rim of the glass with the lime slice to make the sal</td></tr>
+<tr><td class="mono">strInstructionsDE</td><td><span class="tag tag-blue">4.9%</span></td><td>154</td><td>8</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">Reiben Sie den Rand des Glases mit der Limettenscheibe, dami</td></tr>
+<tr><td class="mono">strInstructionsES</td><td><span class="tag tag-blue">19.1%</span></td><td>131</td><td>31</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">Frota el borde del vaso con la rodaja de lima para que la sa</td></tr>
+<tr><td class="mono">strInstructionsFR</td><td><span class="tag tag-yellow">24.1%</span></td><td>123</td><td>39</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">Frotter le bord du verre avec la tranche de citron vert pour</td></tr>
+<tr><td class="mono">strInstructionsIT</td><td><span class="tag tag-green">0%</span></td><td>162</td><td>0</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">Strofina il bordo del bicchiere con la fetta di lime per far</td></tr>
+<tr><td class="mono">strInstructionsZH-HANS</td><td><span class="tag tag-red">99.4%</span></td><td>1</td><td>161</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">将解冻的草莓放入一个大碗中。用叉子将它们捣碎，以确保没有大块。
+
+在潘趣酒碗或水罐中，将捣碎的草莓、酸橙果肉和苏打水</td></tr>
+<tr><td class="mono">strInstructionsZH-HANT</td><td><span class="tag tag-red">99.4%</span></td><td>1</td><td>161</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">將解凍的草莓放入大碗中。用叉子將它們搗碎，以確保沒有大塊。
+
+在潘趣酒碗或水罐中，將搗碎的草莓、酸橙果肉和蘇打水混合</td></tr>
+<tr><td class="mono">strMeasure1</td><td><span class="tag tag-blue">1.9%</span></td><td>159</td><td>3</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">1 1/2 oz </td></tr>
+<tr><td class="mono">strMeasure10</td><td><span class="tag tag-red">100.0%</span></td><td>0</td><td>162</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">—</td></tr>
+<tr><td class="mono">strMeasure11</td><td><span class="tag tag-red">100.0%</span></td><td>0</td><td>162</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">—</td></tr>
+<tr><td class="mono">strMeasure12</td><td><span class="tag tag-red">100.0%</span></td><td>0</td><td>162</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">—</td></tr>
+<tr><td class="mono">strMeasure13</td><td><span class="tag tag-red">100.0%</span></td><td>0</td><td>162</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">—</td></tr>
+<tr><td class="mono">strMeasure14</td><td><span class="tag tag-red">100.0%</span></td><td>0</td><td>162</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">—</td></tr>
+<tr><td class="mono">strMeasure15</td><td><span class="tag tag-red">100.0%</span></td><td>0</td><td>162</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">—</td></tr>
+<tr><td class="mono">strMeasure2</td><td><span class="tag tag-blue">4.3%</span></td><td>155</td><td>7</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">1/2 oz </td></tr>
+<tr><td class="mono">strMeasure3</td><td><span class="tag tag-blue">14.8%</span></td><td>138</td><td>24</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">1 oz </td></tr>
+<tr><td class="mono">strMeasure4</td><td><span class="tag tag-yellow">37.0%</span></td><td>102</td><td>55</td><td>5</td><td style="font-size:0.78rem;color:var(--muted)">Coarse </td></tr>
+<tr><td class="mono">strMeasure5</td><td><span class="tag tag-orange">58.6%</span></td><td>67</td><td>83</td><td>12</td><td style="font-size:0.78rem;color:var(--muted)">1 oz </td></tr>
+<tr><td class="mono">strMeasure6</td><td><span class="tag tag-red">81.5%</span></td><td>30</td><td>118</td><td>14</td><td style="font-size:0.78rem;color:var(--muted)">Garnish with</td></tr>
+<tr><td class="mono">strMeasure7</td><td><span class="tag tag-red">93.2%</span></td><td>11</td><td>134</td><td>17</td><td style="font-size:0.78rem;color:var(--muted)">Garnish with</td></tr>
+<tr><td class="mono">strMeasure8</td><td><span class="tag tag-red">98.1%</span></td><td>3</td><td>159</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">3 oz</td></tr>
+<tr><td class="mono">strMeasure9</td><td><span class="tag tag-red">100.0%</span></td><td>0</td><td>162</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">—</td></tr>
+<tr><td class="mono">strTags</td><td><span class="tag tag-orange">75.3%</span></td><td>40</td><td>122</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">IBA,ContemporaryClassic</td></tr>
+<tr><td class="mono">strVideo</td><td><span class="tag tag-red">95.1%</span></td><td>8</td><td>154</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">https://www.youtube.com/watch?v=ApMR3IWYZHI</td></tr></tbody>
+      </table>
+    </div>
+    <h3>标准请求/响应样本</h3>
+    <div class="code-block">{
+  "drinks": [
+    {
+      "idDrink": "11007",
+      "strDrink": "Margarita",
+      "strDrinkAlternate": null,
+      "strTags": "IBA,ContemporaryClassic",
+      "strVideo": null,
+      "strCategory": "Ordinary Drink",
+      "strIBA": "Contemporary Classics",
+      "strAlcoholic": "Alcoholic",
+      "strGlass": "Cocktail glass",
+      "strInstructions": "Rub the rim of the glass with the lime slice to make the salt stick to it. Take care to moisten only the outer rim and sprinkle the salt on it. The salt should present to the lips of the imbiber and never mix into the cocktail. Shake the other ingredients with ice, then carefully pour into the glass.",
+      "strInstructionsES": "Frota el borde del vaso con la rodaja de lima para que la sal se adhiera a él. Procure humedecer sólo el borde exterior y espolvorear la sal sobre él. La sal debe presentarse en los labios del imbibidor y nunca mezclarse en el cóctel. Agite los demás ingredientes con hielo y viértalos con cuidado en el vaso.",
+      "strInstructionsDE": "Reiben Sie den Rand des Glases mit der Limettenscheibe, damit das Salz daran haftet. Achten Sie darauf, dass nur der äußere Rand angefeuchtet wird und streuen Sie das Salz darauf. Das Salz sollte sich auf den Lippen des Genießers befinden und niemals in den Cocktail einmischen. Die anderen Zutaten mit Eis schütteln und vorsichtig in das Glas geben.",
+      "strInstructionsFR": "Frotter le bord du verre avec la tranche de citron vert pour faire adhérer le sel. Veillez à n'humidifier que le bord extérieur et à y saupoudrer le sel. Le sel doit se présenter aux lèvres du buveur et ne jamais se mélanger au cocktail. Secouez les autres ingrédients avec de la glace, puis versez-les délicatement dans le verre.",
+      "strInstructionsIT": "Strofina il bordo del bicchiere con la fetta di lime per far aderire il sale.\r\nAvere cura di inumidire solo il bordo esterno e cospargere di sale.\r\nIl sale dovrebbe presentarsi alle labbra del bevitore e non mescolarsi mai al</div>
+    
+    <h2 id="ep9"><span class="icon">9.</span> TheCocktailDB — <code>filter.php?i={ingredient}</code></h2>
+    <div class="stats-row" style="grid-template-columns:repeat(4,1fr);">
+      <div class="stat-card blue"><div class="value">30 种食材</div><div class="label">调用次数</div></div>
+      <div class="stat-card green"><div class="value">22</div><div class="label">去重结果数</div></div>
+      <div class="stat-card purple"><div class="value">3</div><div class="label">返回字段数</div></div>
+      <div class="stat-card yellow"><div class="value">drinks</div><div class="label">返回根 key</div></div>
+    </div>
+    <h3>字段缺失分析</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>字段</th><th>缺失率</th><th>有值</th><th>null</th><th>空串</th><th>样本值</th></tr></thead>
+        <tbody><tr><td class="mono">idDrink</td><td><span class="tag tag-green">0%</span></td><td>22</td><td>0</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">15300</td></tr>
+<tr><td class="mono">strDrink</td><td><span class="tag tag-green">0%</span></td><td>22</td><td>0</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">3-Mile Long Island Iced Tea</td></tr>
+<tr><td class="mono">strDrinkThumb</td><td><span class="tag tag-green">0%</span></td><td>22</td><td>0</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">https://www.thecocktaildb.com/images/media/drink/rrtssw14726</td></tr></tbody>
+      </table>
+    </div>
+    <h3>标准请求/响应样本</h3>
+    <div class="code-block">{
+  "drinks": [
+    {
+      "strDrink": "3-Mile Long Island Iced Tea",
+      "strDrinkThumb": "https://www.thecocktaildb.com/images/media/drink/rrtssw1472668972.jpg",
+      "idDrink": "15300"
+    }
+  ]
+}</div>
+    
+    <h2 id="ep10"><span class="icon">10.</span> TheCocktailDB — <code>lookup.php?i={id}</code></h2>
+    <div class="stats-row" style="grid-template-columns:repeat(4,1fr);">
+      <div class="stat-card blue"><div class="value">30 个 ID</div><div class="label">调用次数</div></div>
+      <div class="stat-card green"><div class="value">20</div><div class="label">去重结果数</div></div>
+      <div class="stat-card purple"><div class="value">51</div><div class="label">返回字段数</div></div>
+      <div class="stat-card yellow"><div class="value">drinks</div><div class="label">返回根 key</div></div>
+    </div>
+    <h3>字段缺失分析</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>字段</th><th>缺失率</th><th>有值</th><th>null</th><th>空串</th><th>样本值</th></tr></thead>
+        <tbody><tr><td class="mono">dateModified</td><td><span class="tag tag-green">0%</span></td><td>20</td><td>0</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">2015-08-18 14:42:59</td></tr>
+<tr><td class="mono">idDrink</td><td><span class="tag tag-green">0%</span></td><td>20</td><td>0</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">11007</td></tr>
+<tr><td class="mono">strAlcoholic</td><td><span class="tag tag-green">0%</span></td><td>20</td><td>0</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">Alcoholic</td></tr>
+<tr><td class="mono">strCategory</td><td><span class="tag tag-green">0%</span></td><td>20</td><td>0</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">Ordinary Drink</td></tr>
+<tr><td class="mono">strCreativeCommonsConfirmed</td><td><span class="tag tag-green">0%</span></td><td>20</td><td>0</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">Yes</td></tr>
+<tr><td class="mono">strDrink</td><td><span class="tag tag-green">0%</span></td><td>20</td><td>0</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">Margarita</td></tr>
+<tr><td class="mono">strDrinkAlternate</td><td><span class="tag tag-red">100.0%</span></td><td>0</td><td>20</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">—</td></tr>
+<tr><td class="mono">strDrinkThumb</td><td><span class="tag tag-green">0%</span></td><td>20</td><td>0</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">https://www.thecocktaildb.com/images/media/drink/5noda615895</td></tr>
+<tr><td class="mono">strGlass</td><td><span class="tag tag-green">0%</span></td><td>20</td><td>0</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">Cocktail glass</td></tr>
+<tr><td class="mono">strIBA</td><td><span class="tag tag-orange">75.0%</span></td><td>5</td><td>15</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">Contemporary Classics</td></tr>
+<tr><td class="mono">strImageAttribution</td><td><span class="tag tag-orange">55.0%</span></td><td>9</td><td>11</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">Cocktailmarler</td></tr>
+<tr><td class="mono">strImageSource</td><td><span class="tag tag-orange">55.0%</span></td><td>9</td><td>11</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">https://commons.wikimedia.org/wiki/File:Klassiche_Margarita.</td></tr>
+<tr><td class="mono">strIngredient1</td><td><span class="tag tag-green">0%</span></td><td>20</td><td>0</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">Tequila</td></tr>
+<tr><td class="mono">strIngredient10</td><td><span class="tag tag-red">100.0%</span></td><td>0</td><td>20</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">—</td></tr>
+<tr><td class="mono">strIngredient11</td><td><span class="tag tag-red">100.0%</span></td><td>0</td><td>20</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">—</td></tr>
+<tr><td class="mono">strIngredient12</td><td><span class="tag tag-red">100.0%</span></td><td>0</td><td>20</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">—</td></tr>
+<tr><td class="mono">strIngredient13</td><td><span class="tag tag-red">100.0%</span></td><td>0</td><td>20</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">—</td></tr>
+<tr><td class="mono">strIngredient14</td><td><span class="tag tag-red">100.0%</span></td><td>0</td><td>20</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">—</td></tr>
+<tr><td class="mono">strIngredient15</td><td><span class="tag tag-red">100.0%</span></td><td>0</td><td>20</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">—</td></tr>
+<tr><td class="mono">strIngredient2</td><td><span class="tag tag-green">0%</span></td><td>20</td><td>0</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">Triple sec</td></tr>
+<tr><td class="mono">strIngredient3</td><td><span class="tag tag-blue">10.0%</span></td><td>18</td><td>2</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">Lime juice</td></tr>
+<tr><td class="mono">strIngredient4</td><td><span class="tag tag-orange">60.0%</span></td><td>8</td><td>12</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">Salt</td></tr>
+<tr><td class="mono">strIngredient5</td><td><span class="tag tag-red">90.0%</span></td><td>2</td><td>18</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">Maraschino cherry</td></tr>
+<tr><td class="mono">strIngredient6</td><td><span class="tag tag-red">95.0%</span></td><td>1</td><td>19</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">Orange peel</td></tr>
+<tr><td class="mono">strIngredient7</td><td><span class="tag tag-red">100.0%</span></td><td>0</td><td>20</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">—</td></tr>
+<tr><td class="mono">strIngredient8</td><td><span class="tag tag-red">100.0%</span></td><td>0</td><td>20</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">—</td></tr>
+<tr><td class="mono">strIngredient9</td><td><span class="tag tag-red">100.0%</span></td><td>0</td><td>20</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">—</td></tr>
+<tr><td class="mono">strInstructions</td><td><span class="tag tag-green">0%</span></td><td>20</td><td>0</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">Rub the rim of the glass with the lime slice to make the sal</td></tr>
+<tr><td class="mono">strInstructionsDE</td><td><span class="tag tag-green">0%</span></td><td>20</td><td>0</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">Reiben Sie den Rand des Glases mit der Limettenscheibe, dami</td></tr>
+<tr><td class="mono">strInstructionsES</td><td><span class="tag tag-green">0%</span></td><td>20</td><td>0</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">Frota el borde del vaso con la rodaja de lima para que la sa</td></tr>
+<tr><td class="mono">strInstructionsFR</td><td><span class="tag tag-green">0%</span></td><td>20</td><td>0</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">Frotter le bord du verre avec la tranche de citron vert pour</td></tr>
+<tr><td class="mono">strInstructionsIT</td><td><span class="tag tag-green">0%</span></td><td>20</td><td>0</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">Strofina il bordo del bicchiere con la fetta di lime per far</td></tr>
+<tr><td class="mono">strInstructionsZH-HANS</td><td><span class="tag tag-red">100.0%</span></td><td>0</td><td>20</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">—</td></tr>
+<tr><td class="mono">strInstructionsZH-HANT</td><td><span class="tag tag-red">100.0%</span></td><td>0</td><td>20</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">—</td></tr>
+<tr><td class="mono">strMeasure1</td><td><span class="tag tag-green">0%</span></td><td>20</td><td>0</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">1 1/2 oz </td></tr>
+<tr><td class="mono">strMeasure10</td><td><span class="tag tag-red">100.0%</span></td><td>0</td><td>20</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">—</td></tr>
+<tr><td class="mono">strMeasure11</td><td><span class="tag tag-red">100.0%</span></td><td>0</td><td>20</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">—</td></tr>
+<tr><td class="mono">strMeasure12</td><td><span class="tag tag-red">100.0%</span></td><td>0</td><td>20</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">—</td></tr>
+<tr><td class="mono">strMeasure13</td><td><span class="tag tag-red">100.0%</span></td><td>0</td><td>20</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">—</td></tr>
+<tr><td class="mono">strMeasure14</td><td><span class="tag tag-red">100.0%</span></td><td>0</td><td>20</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">—</td></tr>
+<tr><td class="mono">strMeasure15</td><td><span class="tag tag-red">100.0%</span></td><td>0</td><td>20</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">—</td></tr>
+<tr><td class="mono">strMeasure2</td><td><span class="tag tag-green">0%</span></td><td>20</td><td>0</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">1/2 oz </td></tr>
+<tr><td class="mono">strMeasure3</td><td><span class="tag tag-blue">15.0%</span></td><td>17</td><td>3</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">1 oz </td></tr>
+<tr><td class="mono">strMeasure4</td><td><span class="tag tag-orange">75.0%</span></td><td>5</td><td>15</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">2 or 3 </td></tr>
+<tr><td class="mono">strMeasure5</td><td><span class="tag tag-red">90.0%</span></td><td>2</td><td>18</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">1 </td></tr>
+<tr><td class="mono">strMeasure6</td><td><span class="tag tag-red">95.0%</span></td><td>1</td><td>19</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">1 twist of </td></tr>
+<tr><td class="mono">strMeasure7</td><td><span class="tag tag-red">100.0%</span></td><td>0</td><td>20</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">—</td></tr>
+<tr><td class="mono">strMeasure8</td><td><span class="tag tag-red">100.0%</span></td><td>0</td><td>20</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">—</td></tr>
+<tr><td class="mono">strMeasure9</td><td><span class="tag tag-red">100.0%</span></td><td>0</td><td>20</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">—</td></tr>
+<tr><td class="mono">strTags</td><td><span class="tag tag-orange">50.0%</span></td><td>10</td><td>10</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">IBA,ContemporaryClassic</td></tr>
+<tr><td class="mono">strVideo</td><td><span class="tag tag-red">85.0%</span></td><td>3</td><td>17</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">https://www.youtube.com/watch?v=TFWPtkNoF4Y</td></tr></tbody>
+      </table>
+    </div>
+    <h3>标准请求/响应样本</h3>
+    <div class="code-block">{
+  "drinks": [
+    {
+      "idDrink": "178312",
+      "strDrink": "Bloody Punch",
+      "strDrinkAlternate": null,
+      "strTags": "Halloween",
+      "strVideo": null,
+      "strCategory": "Punch / Party Drink",
+      "strIBA": null,
+      "strAlcoholic": "Alcoholic",
+      "strGlass": "Punch bowl",
+      "strInstructions": "Place the thawed strawberries in a large bowl. Mash them with a fork to ensure no large chunks.\r\n\r\nIn a punch bowl or pitcher, combine mashed strawberries, lime pulp and soda. Mix well.\r\n\r\nAdd blueberries and raisins. They will float and look like bugs in the punch.",
+      "strInstructionsES": "Coloque las fresas descongeladas en un bol grande. Machácalas con un tenedor para que no queden trozos grandes.\r\n\r\nPaso\r\n2\r\n\r\n \r\nEn una ponchera o jarra, mezcla el puré de fresas, la pulpa de lima y la soda. Mezcle bien.\r\n\r\nPaso\r\n3\r\n\r\n \r\nAñade los arándanos y las pasas. Flotarán y parecerán bichos en el ponche.",
+      "strInstructionsDE": "Die aufgetauten Erdbeeren in eine große Schüssel geben. Zerdrücken Sie sie mit einer Gabel, um sicherzustellen, dass keine großen Stücke entstehen.\r\n\r\nIn einer Bowle oder einem Krug zerdrückte Erdbeeren, Limettenmark und Soda vermischen. Gut mischen.\r\n\r\nBlaubeeren und Rosinen hinzufügen. Sie schweben und sehen aus wie Käfer im Loch.",
+      "strInstructionsFR": "Placer les fraises décongelées dans un grand bol. Les écraser à l'aide d'une fourchette pour qu'il n'y ait pas de gros morceaux.\r\n\r\nDans un bol à punch ou un pichet, mélanger les fraises écrasées, la pulpe de citron vert et le soda. Bien mélanger.\r\n\r\nAjouter les myrtilles et les raisins secs. Ils flotteront et ressembleront à des insectes dans le punch.",
+      "strInstructionsIT": "Metti le fragole in una grande ciotola. Schiacciateli con un cucchiaio per assicurarvi che non ci siano grossi pezzi.\r\nPasso 2\r\nIn una ciotola da punch o in una brocca, unisci il purè di fragole, la polpa di lime e la soda. Mesc</div>
+    
+    <h2 id="ep11"><span class="icon">11.</span> TheCocktailDB — <code>random.php</code></h2>
+    <div class="stats-row" style="grid-template-columns:repeat(4,1fr);">
+      <div class="stat-card blue"><div class="value">30 次随机</div><div class="label">调用次数</div></div>
+      <div class="stat-card green"><div class="value">28</div><div class="label">去重结果数</div></div>
+      <div class="stat-card purple"><div class="value">51</div><div class="label">返回字段数</div></div>
+      <div class="stat-card yellow"><div class="value">drinks</div><div class="label">返回根 key</div></div>
+    </div>
+    <h3>字段缺失分析</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>字段</th><th>缺失率</th><th>有值</th><th>null</th><th>空串</th><th>样本值</th></tr></thead>
+        <tbody><tr><td class="mono">dateModified</td><td><span class="tag tag-blue">14.3%</span></td><td>24</td><td>4</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">2015-09-06 16:51:14</td></tr>
+<tr><td class="mono">idDrink</td><td><span class="tag tag-green">0%</span></td><td>28</td><td>0</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">12442</td></tr>
+<tr><td class="mono">strAlcoholic</td><td><span class="tag tag-green">0%</span></td><td>28</td><td>0</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">Alcoholic</td></tr>
+<tr><td class="mono">strCategory</td><td><span class="tag tag-green">0%</span></td><td>28</td><td>0</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">Ordinary Drink</td></tr>
+<tr><td class="mono">strCreativeCommonsConfirmed</td><td><span class="tag tag-green">0%</span></td><td>28</td><td>0</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">No</td></tr>
+<tr><td class="mono">strDrink</td><td><span class="tag tag-green">0%</span></td><td>28</td><td>0</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">Vermouth Cassis</td></tr>
+<tr><td class="mono">strDrinkAlternate</td><td><span class="tag tag-red">100.0%</span></td><td>0</td><td>28</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">—</td></tr>
+<tr><td class="mono">strDrinkThumb</td><td><span class="tag tag-green">0%</span></td><td>28</td><td>0</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">https://www.thecocktaildb.com/images/media/drink/tswpxx14415</td></tr>
+<tr><td class="mono">strGlass</td><td><span class="tag tag-green">0%</span></td><td>28</td><td>0</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">Highball glass</td></tr>
+<tr><td class="mono">strIBA</td><td><span class="tag tag-red">85.7%</span></td><td>4</td><td>24</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">Contemporary Classics</td></tr>
+<tr><td class="mono">strImageAttribution</td><td><span class="tag tag-red">96.4%</span></td><td>1</td><td>27</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">Cocktailmarler</td></tr>
+<tr><td class="mono">strImageSource</td><td><span class="tag tag-red">89.3%</span></td><td>3</td><td>25</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">https://commons.wikimedia.org/wiki/File:Klassiche_Margarita.</td></tr>
+<tr><td class="mono">strIngredient1</td><td><span class="tag tag-green">0%</span></td><td>28</td><td>0</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">Dry Vermouth</td></tr>
+<tr><td class="mono">strIngredient10</td><td><span class="tag tag-red">100.0%</span></td><td>0</td><td>28</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">—</td></tr>
+<tr><td class="mono">strIngredient11</td><td><span class="tag tag-red">100.0%</span></td><td>0</td><td>28</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">—</td></tr>
+<tr><td class="mono">strIngredient12</td><td><span class="tag tag-red">100.0%</span></td><td>0</td><td>28</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">—</td></tr>
+<tr><td class="mono">strIngredient13</td><td><span class="tag tag-red">100.0%</span></td><td>0</td><td>28</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">—</td></tr>
+<tr><td class="mono">strIngredient14</td><td><span class="tag tag-red">100.0%</span></td><td>0</td><td>28</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">—</td></tr>
+<tr><td class="mono">strIngredient15</td><td><span class="tag tag-red">100.0%</span></td><td>0</td><td>28</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">—</td></tr>
+<tr><td class="mono">strIngredient2</td><td><span class="tag tag-green">0%</span></td><td>28</td><td>0</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">Creme de Cassis</td></tr>
+<tr><td class="mono">strIngredient3</td><td><span class="tag tag-blue">3.6%</span></td><td>27</td><td>1</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">Carbonated water</td></tr>
+<tr><td class="mono">strIngredient4</td><td><span class="tag tag-yellow">35.7%</span></td><td>18</td><td>10</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">Cucumber</td></tr>
+<tr><td class="mono">strIngredient5</td><td><span class="tag tag-orange">64.3%</span></td><td>10</td><td>18</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">lemon</td></tr>
+<tr><td class="mono">strIngredient6</td><td><span class="tag tag-red">85.7%</span></td><td>4</td><td>24</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">Red wine</td></tr>
+<tr><td class="mono">strIngredient7</td><td><span class="tag tag-red">96.4%</span></td><td>1</td><td>27</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">Brandy</td></tr>
+<tr><td class="mono">strIngredient8</td><td><span class="tag tag-red">100.0%</span></td><td>0</td><td>28</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">—</td></tr>
+<tr><td class="mono">strIngredient9</td><td><span class="tag tag-red">100.0%</span></td><td>0</td><td>28</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">—</td></tr>
+<tr><td class="mono">strInstructions</td><td><span class="tag tag-green">0%</span></td><td>28</td><td>0</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">Stir vermouth and creme de cassis in a highball glass with i</td></tr>
+<tr><td class="mono">strInstructionsDE</td><td><span class="tag tag-blue">10.7%</span></td><td>25</td><td>3</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">Wermut und Creme de Cassis in einem Highball-Glas mit Eiswür</td></tr>
+<tr><td class="mono">strInstructionsES</td><td><span class="tag tag-yellow">28.6%</span></td><td>20</td><td>8</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">Llenar el vaso con hielo
+Vierta la ginebra y el zumo de lim</td></tr>
+<tr><td class="mono">strInstructionsFR</td><td><span class="tag tag-yellow">39.3%</span></td><td>17</td><td>11</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">Remplir le verre de glace
+Verser le Gin et le jus de citron</td></tr>
+<tr><td class="mono">strInstructionsIT</td><td><span class="tag tag-green">0%</span></td><td>28</td><td>0</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">Mescolare il vermouth e la creme de cassis in un bicchiere h</td></tr>
+<tr><td class="mono">strInstructionsZH-HANS</td><td><span class="tag tag-red">100.0%</span></td><td>0</td><td>28</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">—</td></tr>
+<tr><td class="mono">strInstructionsZH-HANT</td><td><span class="tag tag-red">100.0%</span></td><td>0</td><td>28</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">—</td></tr>
+<tr><td class="mono">strMeasure1</td><td><span class="tag tag-blue">3.6%</span></td><td>27</td><td>1</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">1 1/2 oz </td></tr>
+<tr><td class="mono">strMeasure10</td><td><span class="tag tag-red">100.0%</span></td><td>0</td><td>28</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">—</td></tr>
+<tr><td class="mono">strMeasure11</td><td><span class="tag tag-red">100.0%</span></td><td>0</td><td>28</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">—</td></tr>
+<tr><td class="mono">strMeasure12</td><td><span class="tag tag-red">100.0%</span></td><td>0</td><td>28</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">—</td></tr>
+<tr><td class="mono">strMeasure13</td><td><span class="tag tag-red">100.0%</span></td><td>0</td><td>28</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">—</td></tr>
+<tr><td class="mono">strMeasure14</td><td><span class="tag tag-red">100.0%</span></td><td>0</td><td>28</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">—</td></tr>
+<tr><td class="mono">strMeasure15</td><td><span class="tag tag-red">100.0%</span></td><td>0</td><td>28</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">—</td></tr>
+<tr><td class="mono">strMeasure2</td><td><span class="tag tag-green">0%</span></td><td>28</td><td>0</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">3/4 oz </td></tr>
+<tr><td class="mono">strMeasure3</td><td><span class="tag tag-blue">10.7%</span></td><td>25</td><td>3</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">10 cl</td></tr>
+<tr><td class="mono">strMeasure4</td><td><span class="tag tag-yellow">46.4%</span></td><td>15</td><td>13</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">Chopped</td></tr>
+<tr><td class="mono">strMeasure5</td><td><span class="tag tag-orange">64.3%</span></td><td>10</td><td>17</td><td>1</td><td style="font-size:0.78rem;color:var(--muted)">Chopped</td></tr>
+<tr><td class="mono">strMeasure6</td><td><span class="tag tag-red">92.9%</span></td><td>2</td><td>24</td><td>2</td><td style="font-size:0.78rem;color:var(--muted)">750 ml </td></tr>
+<tr><td class="mono">strMeasure7</td><td><span class="tag tag-red">96.4%</span></td><td>1</td><td>25</td><td>2</td><td style="font-size:0.78rem;color:var(--muted)">1/4 cup </td></tr>
+<tr><td class="mono">strMeasure8</td><td><span class="tag tag-red">100.0%</span></td><td>0</td><td>28</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">—</td></tr>
+<tr><td class="mono">strMeasure9</td><td><span class="tag tag-red">100.0%</span></td><td>0</td><td>28</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">—</td></tr>
+<tr><td class="mono">strTags</td><td><span class="tag tag-orange">71.4%</span></td><td>8</td><td>20</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">German</td></tr>
+<tr><td class="mono">strVideo</td><td><span class="tag tag-red">96.4%</span></td><td>1</td><td>27</td><td>0</td><td style="font-size:0.78rem;color:var(--muted)">https://www.youtube.com/watch?v=obGhGNUKx30</td></tr></tbody>
+      </table>
+    </div>
+    <h3>标准请求/响应样本</h3>
+    <div class="code-block">{
+  "drinks": [
+    {
+      "idDrink": "17215",
+      "strDrink": "Spritz",
+      "strDrinkAlternate": null,
+      "strTags": null,
+      "strVideo": null,
+      "strCategory": "Ordinary Drink",
+      "strIBA": "New Era Drinks",
+      "strAlcoholic": "Alcoholic",
+      "strGlass": "Old-Fashioned glass",
+      "strInstructions": "Build into glass over ice, garnish and serve.",
+      "strInstructionsES": "Servir en un vaso con hielo, decorar y servir.",
+      "strInstructionsDE": "Über Eis in Glas einfüllen, garnieren und servieren.",
+      "strInstructionsFR": "Verser dans un verre avec des glaçons, garnir et servir.",
+      "strInstructionsIT": "Build into glass over ice, garnish and serve.",
+      "strInstructionsZH-HANS": null,
+      "strInstructionsZH-HANT": null,
+      "strDrinkThumb": "https://www.thecocktaildb.com/images/media/drink/j9evx11504373665.jpg",
+      "strIngredient1": "Prosecco",
+      "strIngredient2": "Campari",
+      "strIngredient3": "Soda Water",
+      "strIngredient4": null,
+      "strIngredient5": null,
+      "strIngredient6": null,
+      "strIngredient7": null,
+      "strIngredient8": null,
+      "strIngredient9": null,
+      "strIngredient10": null,
+      "strIngredient11": null,
+      "strIngredient12": null,
+      "strIngredient13": null,
+      "strIngredient14": null,
+      "strIngredient15": null,
+      "strMeasure1": "6 cl",
+      "strMeasure2": "4 cl",
+      "strMeasure3": "splash",
+      "strMeasure4": null,
+      "strMeasure5": null,
+      "strMeasure6": null,
+      "strMeasure7": null,
+      "strMeasure8": null,
+      "strMeasure9": null,
+      "strMeasure10": null,
+      "strMeasure11": null,
+      "strMeasure12": null,
+      "strMeasure13": null,
+      "strMeasure14": null,
+      "strMeasure15": null,
+      "strImageSource": null,
+      "strImageAttribution": null,
+      "strCreativeCommonsConfirmed": "No",
+      "dateModified": "2017-09-02 18:34:25"
+    }
+  ]
+}</div>
+    
+
+<h2><span class="icon">🔍</span> 跨接口关键发现</h2>
+
+<div class="alert">
+  <strong>1. filter 接口只返回摘要</strong><br>
+  TheMealDB filter 返回 5 字段，TheCocktailDB filter 返回 3 字段。需配合 lookup 获取完整数据。
+</div>
+
+<div class="alert green">
+  <strong>2. strCountry 零缺失</strong><br>
+  在所有 TheMealDB 接口中，<code>strCountry</code> 始终有值（0% 缺失），而 <code>strArea</code> 在 filter_i/filter_c 中有 ~10% 缺失。推荐用 strCountry。
+</div>
+
+<div class="alert red">
+  <strong>3. 无结果返回格式不一致</strong><br>
+  TheCocktailDB filter 无结果返回 <code>"no data found"</code> 字符串，其他接口返回 <code>null</code>。
+</div>
+
+<div class="alert">
+  <strong>4. TheCocktailDB 中文翻译未实现</strong><br>
+  <code>strInstructionsZH-HANS</code> 和 <code>strInstructionsZH-HANT</code> 字段存在但 99~100% 为 null。
+</div>
+
+<div class="alert blue">
+  <strong>5. 永远为空的字段（6 个）</strong><br>
+  TheMealDB: <code>strMealAlternate</code>、<code>strImageSource</code>、<code>strCreativeCommonsConfirmed</code><br>
+  TheCocktailDB: <code>strDrinkAlternate</code>、<code>strInstructionsZH-HANS</code>、<code>strInstructionsZH-HANT</code>
+</div>
+
+<div class="alert green">
+  <strong>6. TheCocktailDB 特有字段</strong><br>
+  <code>strAlcoholic</code>（含酒精类型，0% 缺失）、<code>strGlass</code>（杯型，0%）、<code>strIBA</code>（IBA 分类，75~86% 缺失）
+</div>
+
+<div class="alert">
+  <strong>7. 食材槽位差异</strong><br>
+  TheMealDB 最多 20 种食材，TheCocktailDB 最多 15 种。实际常用上限：MealDB ~12，Cocktail ~6。
+</div>
+
+<div class="alert blue">
+  <strong>8. 空搜索行为</strong><br>
+  TheMealDB <code>search.php?s=</code> 返回 25 条默认数据（可当推荐接口），TheCocktailDB 返回 null。
+</div>
+
+<div class="alert green">
+  <strong>9. 参数大小写</strong><br>
+  两个 API 的 filter 参数均不区分大小写。
+</div>
+
+<h2><span class="icon">🛠️</span> 前端最佳实践</h2>
+
+<div class="code-block">
+// 统一判空
+const isEmpty = (v) => !v || v.trim() === '' || v === 'null' || v === 'no data found';
+
+// 检查结果
+const hasResults = (data, key = 'meals') => Array.isArray(data[key]) && data[key].length > 0;
+
+// filter → lookup 流程
+async function getFullMeals(filterUrl) {
+  const res = await fetch(filterUrl);
+  const data = await res.json();
+  if (!hasResults(data, 'meals')) return [];
+  return Promise.all(
+    data.meals.map(m =>
+      fetch(`/api/json/v1/1/lookup.php?i=${m.idMeal}`)
+        .then(r => r.json())
+        .then(d => d.meals?.[0])
+    )
+  ).then(r => r.filter(Boolean));
+}
+
+// 归属地（优先 strCountry）
+const getCountry = (meal) => meal.strCountry || meal.strArea || 'Unknown';
+
+// 饮品信息
+const getDrinkInfo = (drink) => ({
+  name: drink.strDrink,
+  category: drink.strCategory,
+  alcoholic: drink.strAlcoholic,
+  glass: drink.strGlass,
+  iba: drink.strIBA || null,
+  tags: isEmpty(drink.strTags) ? [] : drink.strTags.split(',').map(t => t.trim()),
+});
+</div>
+
+<div class="footer">
+  Generated 2026-06-14 &nbsp;·&nbsp; TheMealDB & TheCocktailDB &nbsp;·&nbsp; 11 endpoints × 30 calls
+</div>
+
+</div>
+</body>
+</html>

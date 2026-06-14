@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TheMealDB Random API 分析报告（100 次采样）</title>
+<style>
+  :root {
+    --bg: #0f172a;
+    --card: #1e293b;
+    --border: #334155;
+    --text: #e2e8f0;
+    --muted: #94a3b8;
+    --accent: #38bdf8;
+    --green: #4ade80;
+    --yellow: #fbbf24;
+    --red: #f87171;
+    --orange: #fb923c;
+    --purple: #a78bfa;
+    --pink: #f472b6;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'SF Mono','Cascadia Code','Fira Code','JetBrains Mono',monospace; background:var(--bg); color:var(--text); line-height:1.6; padding:2rem; min-height:100vh; }
+  .container { max-width:1100px; margin:0 auto; }
+  h1 { font-size:1.8rem; font-weight:700; margin-bottom:0.5rem; background:linear-gradient(135deg,var(--accent),var(--purple)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+  .subtitle { color:var(--muted); font-size:0.9rem; margin-bottom:2.5rem; padding-bottom:1.5rem; border-bottom:1px solid var(--border); }
+  .subtitle code { background:var(--card); padding:2px 8px; border-radius:4px; color:var(--accent); font-size:0.85rem; }
+  h2 { font-size:1.2rem; font-weight:600; margin:2.5rem 0 1rem; display:flex; align-items:center; gap:0.5rem; }
+  h2 .icon { font-size:1.3rem; }
+  h3 { font-size:1rem; font-weight:600; margin:1.5rem 0 0.75rem; color:var(--muted); }
+
+  .stats-row { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:1rem; margin-bottom:2rem; }
+  .stat-card { background:var(--card); border:1px solid var(--border); border-radius:10px; padding:1.25rem; text-align:center; }
+  .stat-card .value { font-size:1.8rem; font-weight:700; line-height:1.2; }
+  .stat-card .label { font-size:0.78rem; color:var(--muted); margin-top:0.25rem; }
+  .stat-card.blue .value { color:var(--accent); }
+  .stat-card.green .value { color:var(--green); }
+  .stat-card.yellow .value { color:var(--yellow); }
+  .stat-card.red .value { color:var(--red); }
+  .stat-card.purple .value { color:var(--purple); }
+
+  .table-wrap { background:var(--card); border:1px solid var(--border); border-radius:10px; overflow:hidden; margin-bottom:1.5rem; }
+  table { width:100%; border-collapse:collapse; font-size:0.85rem; }
+  thead th { background:rgba(56,189,248,0.08); text-align:left; padding:0.75rem 1rem; font-weight:600; color:var(--accent); border-bottom:1px solid var(--border); white-space:nowrap; }
+  tbody td { padding:0.6rem 1rem; border-bottom:1px solid rgba(51,65,85,0.5); vertical-align:top; }
+  tbody tr:last-child td { border-bottom:none; }
+  tbody tr:hover { background:rgba(56,189,248,0.04); }
+  .tag { display:inline-block; padding:2px 8px; border-radius:4px; font-size:0.75rem; font-weight:600; white-space:nowrap; }
+  .tag-red { background:rgba(248,113,113,0.15); color:var(--red); }
+  .tag-orange { background:rgba(251,146,60,0.15); color:var(--orange); }
+  .tag-yellow { background:rgba(251,191,36,0.15); color:var(--yellow); }
+  .tag-green { background:rgba(74,222,128,0.15); color:var(--green); }
+  .tag-blue { background:rgba(56,189,248,0.15); color:var(--accent); }
+  .tag-purple { background:rgba(167,139,250,0.15); color:var(--purple); }
+  .mono { font-family:inherit; font-size:0.82rem; color:var(--accent); }
+
+  .bar-row { display:flex; align-items:center; gap:0.75rem; margin-bottom:0.5rem; font-size:0.82rem; }
+  .bar-label { width:170px; text-align:right; color:var(--muted); flex-shrink:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .bar-track { flex:1; height:22px; background:rgba(51,65,85,0.4); border-radius:4px; overflow:hidden; }
+  .bar-fill { height:100%; border-radius:4px; transition:width 0.6s ease; min-width:2px; }
+  .bar-fill.blue { background:linear-gradient(90deg,var(--accent),#818cf8); }
+  .bar-fill.green { background:linear-gradient(90deg,var(--green),#34d399); }
+  .bar-fill.yellow { background:linear-gradient(90deg,var(--yellow),#f59e0b); }
+  .bar-fill.red { background:linear-gradient(90deg,var(--red),#ef4444); }
+  .bar-fill.purple { background:linear-gradient(90deg,var(--purple),#c084fc); }
+  .bar-fill.pink { background:linear-gradient(90deg,var(--pink),#f9a8d4); }
+  .bar-fill.orange { background:linear-gradient(90deg,var(--orange),#fdba74); }
+  .bar-value { width:55px; text-align:right; font-weight:600; flex-shrink:0; }
+
+  .alert { background:var(--card); border:1px solid var(--border); border-left:4px solid var(--yellow); border-radius:0 10px 10px 0; padding:1rem 1.25rem; margin-bottom:1rem; font-size:0.85rem; }
+  .alert.red { border-left-color:var(--red); }
+  .alert.green { border-left-color:var(--green); }
+  .alert.blue { border-left-color:var(--accent); }
+  .alert strong { color:var(--yellow); }
+  .alert.red strong { color:var(--red); }
+  .alert.green strong { color:var(--green); }
+  .alert.blue strong { color:var(--accent); }
+
+  .code-block { background:#0c1222; border:1px solid var(--border); border-radius:8px; padding:1rem 1.25rem; font-size:0.82rem; line-height:1.7; overflow-x:auto; margin-bottom:1.5rem; color:var(--muted); }
+  .code-block .kw { color:var(--purple); }
+  .code-block .fn { color:var(--accent); }
+  .code-block .str { color:var(--green); }
+  .code-block .cm { color:#64748b; }
+  .code-block .num { color:var(--orange); }
+
+  .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; margin-bottom:1.5rem; }
+  @media (max-width:700px) { .grid-2 { grid-template-columns:1fr; } .bar-label { width:120px; font-size:0.75rem; } }
+
+  .footer { margin-top:3rem; padding-top:1.5rem; border-top:1px solid var(--border); text-align:center; color:var(--muted); font-size:0.78rem; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>🍽️ TheMealDB Random API 分析报告</h1>
+  <p class="subtitle">
+    接口: <code>https://www.themealdb.com/api/json/v1/1/random.php</code> &nbsp;|&nbsp;
+    采样: <code>100 次</code> &nbsp;|&nbsp;
+    日期: 2026-06-14
+  </p>
+
+  <!-- Overview Stats -->
+  <div class="stats-row">
+    <div class="stat-card blue"><div class="value">54</div><div class="label">总字段数</div></div>
+    <div class="stat-card green"><div class="value">12</div><div class="label">从未缺失</div></div>
+    <div class="stat-card yellow"><div class="value">39</div><div class="label">有时缺失</div></div>
+    <div class="stat-card red"><div class="value">3</div><div class="label">永远缺失</div></div>
+    <div class="stat-card purple"><div class="value">95/100</div><div class="label">唯一 ID 数</div></div>
+  </div>
+
+  <!-- ========== 永远缺失 ========== -->
+  <h2><span class="icon">💀</span> 永远缺失的字段（100% 为空）</h2>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>字段</th><th>缺失类型</th><th>中文说明</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">strMealAlternate</td><td><span class="tag tag-red">null</span></td><td>菜品别名 / 替代名称，疑似废弃字段</td></tr>
+        <tr><td class="mono">strImageSource</td><td><span class="tag tag-red">null</span></td><td>图片来源 URL，永远为 null</td></tr>
+        <tr><td class="mono">strCreativeCommonsConfirmed</td><td><span class="tag tag-red">null</span></td><td>Creative Commons 协议确认标志，永远为 null</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ========== 高频缺失 ========== -->
+  <h2><span class="icon">📉</span> 高频缺失字段（基于 100 次采样）</h2>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>字段</th><th>缺失率</th><th>缺失形式</th><th>中文说明</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">strIngredient17~20</td><td><span class="tag tag-red">96~98%</span></td><td>null + 空字符串混合</td><td>第 17~20 种食材名称，几乎不使用</td></tr>
+        <tr><td class="mono">strIngredient14~16</td><td><span class="tag tag-red">83~92%</span></td><td>null + 空字符串混合</td><td>第 14~16 种食材名称</td></tr>
+        <tr><td class="mono">strIngredient13</td><td><span class="tag tag-red">77%</span></td><td>null + 空字符串</td><td>第 13 种食材名称</td></tr>
+        <tr><td class="mono">strIngredient12</td><td><span class="tag tag-orange">66%</span></td><td>null + 空字符串</td><td>第 12 种食材名称</td></tr>
+        <tr><td class="mono">strTags</td><td><span class="tag tag-orange">65%</span></td><td>null</td><td>菜品标签，逗号分隔</td></tr>
+        <tr><td class="mono">strIngredient11</td><td><span class="tag tag-orange">57%</span></td><td>null + 空字符串</td><td>第 11 种食材名称</td></tr>
+        <tr><td class="mono">dateModified</td><td><span class="tag tag-yellow">49%</span></td><td>null</td><td>记录最后修改时间</td></tr>
+        <tr><td class="mono">strMeasure17~20</td><td><span class="tag tag-yellow">44~46%</span></td><td>null + 空字符串</td><td>第 17~20 种食材用量</td></tr>
+        <tr><td class="mono">strIngredient10</td><td><span class="tag tag-yellow">43%</span></td><td>null + 空字符串</td><td>第 10 种食材名称</td></tr>
+        <tr><td class="mono">strIngredient9</td><td><span class="tag tag-yellow">34%</span></td><td>null + 空字符串</td><td>第 9 种食材名称</td></tr>
+        <tr><td class="mono">strIngredient8</td><td><span class="tag tag-blue">24%</span></td><td>空字符串</td><td>第 8 种食材名称</td></tr>
+        <tr><td class="mono">strYoutube</td><td><span class="tag tag-blue">14%</span></td><td>空字符串</td><td>YouTube 视频链接</td></tr>
+        <tr><td class="mono">strArea</td><td><span class="tag tag-blue">13%</span></td><td>null</td><td>菜系风格标签（形容词形式）</td></tr>
+        <tr><td class="mono">strSource</td><td><span class="tag tag-blue">9%</span></td><td>null + 空字符串</td><td>菜谱原始来源 URL</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ========== 食材用量缺失可视化 ========== -->
+  <h2><span class="icon">📊</span> strIngredient 缺失率分布（100 次采样）</h2>
+
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:1.25rem;margin-bottom:1.5rem;">
+    <div class="bar-row"><div class="bar-label">strIngredient1~3</div><div class="bar-track"><div class="bar-fill green" style="width:0%"></div></div><div class="bar-value" style="color:var(--green)">0%</div></div>
+    <div class="bar-row"><div class="bar-label">strIngredient4</div><div class="bar-track"><div class="bar-fill green" style="width:1%"></div></div><div class="bar-value" style="color:var(--green)">1%</div></div>
+    <div class="bar-row"><div class="bar-label">strIngredient5</div><div class="bar-track"><div class="bar-fill green" style="width:6%"></div></div><div class="bar-value" style="color:var(--green)">6%</div></div>
+    <div class="bar-row"><div class="bar-label">strIngredient6</div><div class="bar-track"><div class="bar-fill green" style="width:12%"></div></div><div class="bar-value" style="color:var(--green)">12%</div></div>
+    <div class="bar-row"><div class="bar-label">strIngredient7</div><div class="bar-track"><div class="bar-fill green" style="width:17%"></div></div><div class="bar-value" style="color:var(--green)">17%</div></div>
+    <div class="bar-row"><div class="bar-label">strIngredient8</div><div class="bar-track"><div class="bar-fill yellow" style="width:24%"></div></div><div class="bar-value" style="color:var(--yellow)">24%</div></div>
+    <div class="bar-row"><div class="bar-label">strIngredient9</div><div class="bar-track"><div class="bar-fill yellow" style="width:34%"></div></div><div class="bar-value" style="color:var(--yellow)">34%</div></div>
+    <div class="bar-row"><div class="bar-label">strIngredient10</div><div class="bar-track"><div class="bar-fill orange" style="width:43%"></div></div><div class="bar-value" style="color:var(--orange)">43%</div></div>
+    <div class="bar-row"><div class="bar-label">strIngredient11</div><div class="bar-track"><div class="bar-fill orange" style="width:57%"></div></div><div class="bar-value" style="color:var(--orange)">57%</div></div>
+    <div class="bar-row"><div class="bar-label">strIngredient12</div><div class="bar-track"><div class="bar-fill red" style="width:66%"></div></div><div class="bar-value" style="color:var(--red)">66%</div></div>
+    <div class="bar-row"><div class="bar-label">strIngredient13</div><div class="bar-track"><div class="bar-fill red" style="width:77%"></div></div><div class="bar-value" style="color:var(--red)">77%</div></div>
+    <div class="bar-row"><div class="bar-label">strIngredient14</div><div class="bar-track"><div class="bar-fill red" style="width:83%"></div></div><div class="bar-value" style="color:var(--red)">83%</div></div>
+    <div class="bar-row"><div class="bar-label">strIngredient15</div><div class="bar-track"><div class="bar-fill red" style="width:89%"></div></div><div class="bar-value" style="color:var(--red)">89%</div></div>
+    <div class="bar-row"><div class="bar-label">strIngredient16</div><div class="bar-track"><div class="bar-fill red" style="width:92%"></div></div><div class="bar-value" style="color:var(--red)">92%</div></div>
+    <div class="bar-row"><div class="bar-label">strIngredient17</div><div class="bar-track"><div class="bar-fill red" style="width:96%"></div></div><div class="bar-value" style="color:var(--red)">96%</div></div>
+    <div class="bar-row"><div class="bar-label">strIngredient18~20</div><div class="bar-track"><div class="bar-fill red" style="width:98%"></div></div><div class="bar-value" style="color:var(--red)">98%</div></div>
+  </div>
+
+  <!-- ========== 分类 & 地区分布 ========== -->
+  <h2><span class="icon">🗺️</span> 分类 & 地区分布</h2>
+
+  <div class="grid-2">
+    <div>
+      <h3>strCategory（菜系分类）</h3>
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:1rem;">
+        <div class="bar-row"><div class="bar-label">Dessert 甜点</div><div class="bar-track"><div class="bar-fill purple" style="width:100%"></div></div><div class="bar-value">24</div></div>
+        <div class="bar-row"><div class="bar-label">Chicken 鸡肉</div><div class="bar-track"><div class="bar-fill yellow" style="width:54%"></div></div><div class="bar-value">13</div></div>
+        <div class="bar-row"><div class="bar-label">Beef 牛肉</div><div class="bar-track"><div class="bar-fill red" style="width:46%"></div></div><div class="bar-value">11</div></div>
+        <div class="bar-row"><div class="bar-label">Vegetarian 素食</div><div class="bar-track"><div class="bar-fill green" style="width:46%"></div></div><div class="bar-value">11</div></div>
+        <div class="bar-row"><div class="bar-label">Seafood 海鲜</div><div class="bar-track"><div class="bar-fill blue" style="width:42%"></div></div><div class="bar-value">10</div></div>
+        <div class="bar-row"><div class="bar-label">Side 配菜</div><div class="bar-track"><div class="bar-fill blue" style="width:38%"></div></div><div class="bar-value">9</div></div>
+        <div class="bar-row"><div class="bar-label">Pork 猪肉</div><div class="bar-track"><div class="bar-fill pink" style="width:25%"></div></div><div class="bar-value">6</div></div>
+        <div class="bar-row"><div class="bar-label">Miscellaneous 其他</div><div class="bar-track"><div class="bar-fill blue" style="width:25%"></div></div><div class="bar-value">6</div></div>
+        <div class="bar-row"><div class="bar-label">Breakfast 早餐</div><div class="bar-track"><div class="bar-fill orange" style="width:21%"></div></div><div class="bar-value">5</div></div>
+        <div class="bar-row"><div class="bar-label">Lamb 羊肉</div><div class="bar-track"><div class="bar-fill orange" style="width:13%"></div></div><div class="bar-value">3</div></div>
+        <div class="bar-row"><div class="bar-label">Vegan 纯素</div><div class="bar-track"><div class="bar-fill green" style="width:8%"></div></div><div class="bar-value">2</div></div>
+      </div>
+    </div>
+    <div>
+      <h3>strCountry（国家归属）— 零缺失</h3>
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:1rem;">
+        <div class="bar-row"><div class="bar-label">United Kingdom 英国</div><div class="bar-track"><div class="bar-fill blue" style="width:100%"></div></div><div class="bar-value">13</div></div>
+        <div class="bar-row"><div class="bar-label">Jamaica 牙买加</div><div class="bar-track"><div class="bar-fill green" style="width:69%"></div></div><div class="bar-value">9</div></div>
+        <div class="bar-row"><div class="bar-label">United States 美国</div><div class="bar-track"><div class="bar-fill blue" style="width:46%"></div></div><div class="bar-value">6</div></div>
+        <div class="bar-row"><div class="bar-label">China 中国</div><div class="bar-track"><div class="bar-fill red" style="width:46%"></div></div><div class="bar-value">6</div></div>
+        <div class="bar-row"><div class="bar-label">Turkey 土耳其</div><div class="bar-track"><div class="bar-fill orange" style="width:46%"></div></div><div class="bar-value">6</div></div>
+        <div class="bar-row"><div class="bar-label">France 法国</div><div class="bar-track"><div class="bar-fill purple" style="width:38%"></div></div><div class="bar-value">5</div></div>
+        <div class="bar-row"><div class="bar-label">Cambodia 柬埔寨</div><div class="bar-track"><div class="bar-fill pink" style="width:23%"></div></div><div class="bar-value">3</div></div>
+        <div class="bar-row"><div class="bar-label">其他（33 个国家）</div><div class="bar-track"><div class="bar-fill yellow" style="width:92%"></div></div><div class="bar-value">52</div></div>
+      </div>
+      <div class="alert green" style="margin-top:1rem;">
+        <strong>💡 strCountry 始终有值（100/100）</strong>，而 strArea 有 13 条为 null。两者值<strong>不相同</strong>：strArea 是菜系风格形容词（如 British），strCountry 是国家名（如 United Kingdom）。<strong>建议用 strCountry 做筛选。</strong>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== 特别注意 ========== -->
+  <h2><span class="icon">⚠️</span> 特别值得注意的问题</h2>
+
+  <div class="alert red">
+    <strong>1. 空值类型不一致</strong><br>
+    <code>strIngredient</code> / <code>strMeasure</code> 的空值有时是 JSON <code>null</code>，有时是空字符串 <code>""</code>，两种形式随机出现。前端判空必须同时处理：
+  </div>
+
+  <div class="code-block">
+<span class="kw">const</span> <span class="fn">isEmpty</span> = (v) =&gt; !v || v.<span class="fn">trim</span>() === <span class="str">""</span> || v === <span class="str">"null"</span>;
+</div>
+
+  <div class="alert">
+    <strong>2. strInstructions 几乎全部含换行符</strong><br>
+    99/100 条记录含 <code>\n</code>。步骤格式不统一：<code>step 1</code>、<code>1)</code>、<code>0.</code>、直接文字等。
+  </div>
+
+  <div class="alert">
+    <strong>3. strMeasure 值带前后空格</strong><br>
+    如 <code>" 2 tablespoons "</code>、<code>"  250g"</code>，需 <code>trim()</code>。
+  </div>
+
+  <div class="alert">
+    <strong>4. strTags 格式不规范</strong><br>
+    逗号分隔：<code>"Meat,Stew"</code>、<code>"Soup,Warm,Seafood,Shellfish"</code>，大小写混用，65% 缺失。
+  </div>
+
+  <div class="alert red">
+    <strong>5. idMeal 会出现重复（真随机）</strong><br>
+    100 次调用出现 5 个重复 ID（各重复 2 次），唯一 ID 95 个。<strong>接口是真随机，不保证不重复。</strong>
+  </div>
+
+  <div class="alert blue">
+    <strong>6. strArea ≠ strCountry</strong><br>
+    <code>strArea</code> 是菜系风格（形容词，如 <code>British</code>、<code>Turkish</code>），<code>strCountry</code> 是国家名（名词，如 <code>United Kingdom</code>、<code>Turkey</code>）。100 条中 82 条值不同，13 条 strArea 为 null 但 strCountry 有值。<strong>strCountry 更可靠。</strong>
+  </div>
+
+  <div class="alert green">
+    <strong>7. strSource 缺失率比之前预估高</strong><br>
+    100 次采样中 9 条缺失（9%），比早期 30 次采样的 0~6% 略高。主要是空字符串（8 条）而非 null（1 条）。
+  </div>
+
+  <!-- ========== 从未缺失的字段 ========== -->
+  <h2><span class="icon">✅</span> 从未缺失的字段（12 个核心字段）</h2>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>字段</th><th>类型</th><th>中文说明</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">idMeal</td><td><span class="tag tag-green">string</span></td><td>菜品唯一 ID（数字字符串，如 "53274"）</td></tr>
+        <tr><td class="mono">strMeal</td><td><span class="tag tag-green">string</span></td><td>菜品英文名称</td></tr>
+        <tr><td class="mono">strMealThumb</td><td><span class="tag tag-green">string</span></td><td>菜品缩略图 URL（始终有效，指向 themealdb.com CDN）</td></tr>
+        <tr><td class="mono">strInstructions</td><td><span class="tag tag-green">string</span></td><td>烹饪步骤详细说明（含 \n 换行符）</td></tr>
+        <tr><td class="mono">strCategory</td><td><span class="tag tag-green">string</span></td><td>菜品分类（如 Dessert、Beef、Vegetarian）</td></tr>
+        <tr><td class="mono">strCountry</td><td><span class="tag tag-green">string</span></td><td>所属国家（名词形式，零缺失，如 "United Kingdom"）</td></tr>
+        <tr><td class="mono">strIngredient1</td><td><span class="tag tag-green">string</span></td><td>第 1 种食材名称</td></tr>
+        <tr><td class="mono">strIngredient2</td><td><span class="tag tag-green">string</span></td><td>第 2 种食材名称</td></tr>
+        <tr><td class="mono">strIngredient3</td><td><span class="tag tag-green">string</span></td><td>第 3 种食材名称</td></tr>
+        <tr><td class="mono">strMeasure1</td><td><span class="tag tag-green">string</span></td><td>第 1 种食材用量</td></tr>
+        <tr><td class="mono">strMeasure2</td><td><span class="tag tag-green">string</span></td><td>第 2 种食材用量</td></tr>
+        <tr><td class="mono">strMeasure3</td><td><span class="tag tag-green">string</span></td><td>第 3 种食材用量</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ========== 全字段中文参考 ========== -->
+  <h2><span class="icon">📖</span> 全字段中文参考（54 个字段）</h2>
+
+  <h3>基础信息（7 个）</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>字段</th><th>类型</th><th>中文说明</th><th>示例值</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">idMeal</td><td><span class="tag tag-green">string</span></td><td>菜品唯一 ID（数字字符串）</td><td>"53274"</td></tr>
+        <tr><td class="mono">strMeal</td><td><span class="tag tag-green">string</span></td><td>菜品英文名称</td><td>"Griddled aubergines with sesame dressing"</td></tr>
+        <tr><td class="mono">strMealAlternate</td><td><span class="tag tag-red">null</span></td><td>菜品别名 / 替代名称（永远为 null，疑似废弃）</td><td>null</td></tr>
+        <tr><td class="mono">strCategory</td><td><span class="tag tag-green">string</span></td><td>菜品分类：Beef / Chicken / Dessert / Lamb / Miscellaneous / Pork / Seafood / Side / Starter / Vegan / Vegetarian / Breakfast</td><td>"Vegetarian"</td></tr>
+        <tr><td class="mono">strArea</td><td><span class="tag tag-yellow">string|null</span></td><td>菜系风格标签（形容词形式，如 British / Turkish / Chinese），约 13% 缺失</td><td>"Turkish"</td></tr>
+        <tr><td class="mono">strCountry</td><td><span class="tag tag-green">string</span></td><td>所属国家（名词形式，零缺失，如 United Kingdom / Turkey）。比 strArea 更可靠，推荐用此字段做筛选</td><td>"Turkey"</td></tr>
+        <tr><td class="mono">strTags</td><td><span class="tag tag-orange">string|null</span></td><td>标签，逗号分隔（如 "Meat,Stew"），约 65% 缺失</td><td>"Vegetarian,Nutty"</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>媒体链接（4 个）</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>字段</th><th>类型</th><th>中文说明</th><th>示例值</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">strMealThumb</td><td><span class="tag tag-green">string</span></td><td>菜品缩略图 URL（始终有值，指向 themealdb.com CDN）</td><td>"https://www.themealdb.com/images/media/meals/...jpg"</td></tr>
+        <tr><td class="mono">strImageSource</td><td><span class="tag tag-red">null</span></td><td>图片来源 URL（永远为 null，从未使用）</td><td>null</td></tr>
+        <tr><td class="mono">strSource</td><td><span class="tag tag-blue">string|null</span></td><td>菜谱原始来源 URL（如 BBC Good Food），约 9% 缺失</td><td>"https://www.bbcgoodfood.com/recipes/..."</td></tr>
+        <tr><td class="mono">strYoutube</td><td><span class="tag tag-blue">string</span></td><td>YouTube 视频链接，约 14% 缺失（空字符串）</td><td>"https://www.youtube.com/watch?v=..."</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>烹饪步骤（1 个）</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>字段</th><th>类型</th><th>中文说明</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">strInstructions</td><td><span class="tag tag-green">string</span></td><td>烹饪步骤详细说明（始终有值，99/100 含 \n 换行。格式不统一：有的用 "step 1"，有的用 "1)"，有的用 "0."，有的直接文字）</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>食材 & 用量（40 个：strIngredient1~20 + strMeasure1~20）</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>字段</th><th>缺失率</th><th>中文说明</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">strIngredient1</td><td><span class="tag tag-green">0%</span></td><td>第 1 种食材名称（始终有值）</td></tr>
+        <tr><td class="mono">strIngredient2</td><td><span class="tag tag-green">0%</span></td><td>第 2 种食材名称（始终有值）</td></tr>
+        <tr><td class="mono">strIngredient3</td><td><span class="tag tag-green">0%</span></td><td>第 3 种食材名称（始终有值）</td></tr>
+        <tr><td class="mono">strIngredient4</td><td><span class="tag tag-green">1%</span></td><td>第 4 种食材名称</td></tr>
+        <tr><td class="mono">strIngredient5</td><td><span class="tag tag-green">6%</span></td><td>第 5 种食材名称</td></tr>
+        <tr><td class="mono">strIngredient6</td><td><span class="tag tag-green">12%</span></td><td>第 6 种食材名称</td></tr>
+        <tr><td class="mono">strIngredient7</td><td><span class="tag tag-green">17%</span></td><td>第 7 种食材名称</td></tr>
+        <tr><td class="mono">strIngredient8</td><td><span class="tag tag-yellow">24%</span></td><td>第 8 种食材名称</td></tr>
+        <tr><td class="mono">strIngredient9</td><td><span class="tag tag-yellow">34%</span></td><td>第 9 种食材名称</td></tr>
+        <tr><td class="mono">strIngredient10</td><td><span class="tag tag-yellow">43%</span></td><td>第 10 种食材名称</td></tr>
+        <tr><td class="mono">strIngredient11</td><td><span class="tag tag-orange">57%</span></td><td>第 11 种食材名称</td></tr>
+        <tr><td class="mono">strIngredient12</td><td><span class="tag tag-red">66%</span></td><td>第 12 种食材名称</td></tr>
+        <tr><td class="mono">strIngredient13</td><td><span class="tag tag-red">77%</span></td><td>第 13 种食材名称</td></tr>
+        <tr><td class="mono">strIngredient14</td><td><span class="tag tag-red">83%</span></td><td>第 14 种食材名称</td></tr>
+        <tr><td class="mono">strIngredient15</td><td><span class="tag tag-red">89%</span></td><td>第 15 种食材名称</td></tr>
+        <tr><td class="mono">strIngredient16</td><td><span class="tag tag-red">92%</span></td><td>第 16 种食材名称</td></tr>
+        <tr><td class="mono">strIngredient17</td><td><span class="tag tag-red">96%</span></td><td>第 17 种食材名称</td></tr>
+        <tr><td class="mono">strIngredient18</td><td><span class="tag tag-red">98%</span></td><td>第 18 种食材名称</td></tr>
+        <tr><td class="mono">strIngredient19</td><td><span class="tag tag-red">98%</span></td><td>第 19 种食材名称</td></tr>
+        <tr><td class="mono">strIngredient20</td><td><span class="tag tag-red">98%</span></td><td>第 20 种食材名称</td></tr>
+        <tr><td class="mono">strMeasure1</td><td><span class="tag tag-green">0%</span></td><td>第 1 种食材用量（如 "2 tablespoons"），值常带前后空格</td></tr>
+        <tr><td class="mono">strMeasure2</td><td><span class="tag tag-green">0%</span></td><td>第 2 种食材用量</td></tr>
+        <tr><td class="mono">strMeasure3</td><td><span class="tag tag-green">0%</span></td><td>第 3 种食材用量</td></tr>
+        <tr><td class="mono">strMeasure4</td><td><span class="tag tag-green">2%</span></td><td>第 4 种食材用量</td></tr>
+        <tr><td class="mono">strMeasure5</td><td><span class="tag tag-green">2%</span></td><td>第 5 种食材用量</td></tr>
+        <tr><td class="mono">strMeasure6</td><td><span class="tag tag-green">5%</span></td><td>第 6 种食材用量</td></tr>
+        <tr><td class="mono">strMeasure7</td><td><span class="tag tag-green">9%</span></td><td>第 7 种食材用量</td></tr>
+        <tr><td class="mono">strMeasure8</td><td><span class="tag tag-blue">13%</span></td><td>第 8 种食材用量</td></tr>
+        <tr><td class="mono">strMeasure9</td><td><span class="tag tag-blue">18%</span></td><td>第 9 种食材用量</td></tr>
+        <tr><td class="mono">strMeasure10</td><td><span class="tag tag-blue">21%</span></td><td>第 10 种食材用量</td></tr>
+        <tr><td class="mono">strMeasure11</td><td><span class="tag tag-yellow">27%</span></td><td>第 11 种食材用量</td></tr>
+        <tr><td class="mono">strMeasure12</td><td><span class="tag tag-yellow">32%</span></td><td>第 12 种食材用量</td></tr>
+        <tr><td class="mono">strMeasure13</td><td><span class="tag tag-yellow">37%</span></td><td>第 13 种食材用量</td></tr>
+        <tr><td class="mono">strMeasure14</td><td><span class="tag tag-yellow">40%</span></td><td>第 14 种食材用量</td></tr>
+        <tr><td class="mono">strMeasure15</td><td><span class="tag tag-yellow">41%</span></td><td>第 15 种食材用量</td></tr>
+        <tr><td class="mono">strMeasure16</td><td><span class="tag tag-yellow">43%</span></td><td>第 16 种食材用量</td></tr>
+        <tr><td class="mono">strMeasure17</td><td><span class="tag tag-yellow">44%</span></td><td>第 17 种食材用量</td></tr>
+        <tr><td class="mono">strMeasure18</td><td><span class="tag tag-yellow">46%</span></td><td>第 18 种食材用量</td></tr>
+        <tr><td class="mono">strMeasure19</td><td><span class="tag tag-yellow">46%</span></td><td>第 19 种食材用量</td></tr>
+        <tr><td class="mono">strMeasure20</td><td><span class="tag tag-yellow">46%</span></td><td>第 20 种食材用量</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="alert blue">
+    <strong>💡 食材/用量命名规律：</strong><code>strIngredient</code> 和 <code>strMeasure</code> 是 1~20 编号配对。前端遍历用 <code>meal["strIngredient" + i]</code> 取值。<br>
+    空值可能是 <code>null</code>、<code>""</code> 或 <code>" "</code>（纯空格），建议统一用 <code>!v || v.trim() === ""</code> 判空。
+  </div>
+
+  <h3>元数据（2 个）</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>字段</th><th>类型</th><th>中文说明</th><th>示例值</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">dateModified</td><td><span class="tag tag-yellow">string|null</span></td><td>记录最后修改时间（格式 "YYYY-MM-DD HH:mm:ss"），约 49% 缺失</td><td>"2025-11-22 13:09:15"</td></tr>
+        <tr><td class="mono">strCreativeCommonsConfirmed</td><td><span class="tag tag-red">null</span></td><td>Creative Commons 协议确认标志（永远为 null，从未使用）</td><td>null</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ========== 实用代码 ========== -->
+  <h2><span class="icon">🛠️</span> 前端最佳实践代码</h2>
+
+  <div class="code-block">
+<span class="cm">// 安全判空 — 同时处理 null / "" / "null" / " "</span>
+<span class="kw">const</span> <span class="fn">isEmpty</span> = (v) =&gt; !v || v.<span class="fn">trim</span>() === <span class="str">""</span> || v === <span class="str">"null"</span>;
+
+<span class="cm">// 提取有效食材列表</span>
+<span class="kw">const</span> <span class="fn">getIngredients</span> = (meal) =&gt; {
+  <span class="kw">const</span> items = [];
+  <span class="kw">for</span> (<span class="kw">let</span> i = <span class="num">1</span>; i &lt;= <span class="num">20</span>; i++) {
+    <span class="kw">const</span> name = meal[<span class="str">`strIngredient${i}`</span>];
+    <span class="kw">const</span> amount = meal[<span class="str">`strMeasure${i}`</span>];
+    <span class="kw">if</span> (!<span class="fn">isEmpty</span>(name)) {
+      items.<span class="fn">push</span>({
+        name: name.<span class="fn">trim</span>(),
+        measure: <span class="fn">isEmpty</span>(amount) ? <span class="str">""</span> : amount.<span class="fn">trim</span>(),
+      });
+    }
+  }
+  <span class="kw">return</span> items;
+};
+
+<span class="cm">// 安全获取标签</span>
+<span class="kw">const</span> <span class="fn">getTags</span> = (meal) =&gt; {
+  <span class="kw">if</span> (<span class="fn">isEmpty</span>(meal.strTags)) <span class="kw">return</span> [];
+  <span class="kw">return</span> meal.strTags.<span class="fn">split</span>(<span class="str">","</span>).<span class="fn">map</span>(t =&gt; t.<span class="fn">trim</span>()).<span class="fn">filter</span>(Boolean);
+};
+
+<span class="cm">// 获取归属地（优先 strCountry，零缺失）</span>
+<span class="kw">const</span> <span class="fn">getCountry</span> = (meal) =&gt; meal.strCountry || meal.strArea || <span class="str">"Unknown"</span>;
+
+<span class="cm">// 去重：接口是真随机，100 次出现 5 个重复 ID</span>
+<span class="kw">const</span> seen = <span class="kw">new</span> <span class="fn">Set</span>();
+<span class="kw">if</span> (seen.<span class="fn">has</span>(meal.idMeal)) {
+  console.<span class="fn">warn</span>(<span class="str">`重复菜品: ${meal.strMeal}`</span>);
+}
+seen.<span class="fn">add</span>(meal.idMeal);
+</div>
+
+  <div class="footer">
+    Generated 2026-06-14 &nbsp;·&nbsp; TheMealDB Random API &nbsp;·&nbsp; 100 samples
+  </div>
+
+</div>
+</body>
+</html>
