@@ -68,11 +68,14 @@ export type AssistantMessage = {
   warnings: string[];
   profileUpdates?: Record<string, unknown>[];
   error?: string;
+  pending?: boolean;
+  createdAt?: string;
 };
 
 export type UserMessage = {
   role: "user";
   content: string;
+  createdAt?: string;
 };
 
 export type ChatMessage = UserMessage | AssistantMessage;

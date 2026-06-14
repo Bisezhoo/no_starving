@@ -13,14 +13,25 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
-import { streamChat } from "../api/chat";
+import { onMounted, ref } from "vue";
+import { loadChatHistory, streamChat } from "../api/chat";
 import type { AssistantMessage, Card, ChatMessage, ToolTraceItem } from "../types/chat";
 import MessageComposer from "./MessageComposer.vue";
 import MessageList from "./MessageList.vue";
 
 const messages = ref<ChatMessage[]>([]);
 const sending = ref(false);
+
+onMounted(async () => {
+  try {
+    const history = await loadChatHistory();
+    if (messages.value.length === 0) {
+      messages.value = history;
+    }
+  } catch {
+    messages.value = [];
+  }
+});
 
 async function send(content: string) {
   const assistant: AssistantMessage = {
@@ -30,39 +41,68 @@ async function send(content: string) {
     toolCalls: [],
     warnings: [],
     profileUpdates: [],
+    pending: true,
   };
   messages.value.push({ role: "user", content }, assistant);
+  const assistantIndex = messages.value.length - 1;
+  const updateAssistant = (updater: (message: AssistantMessage) => void) => {
+    const message = messages.value[assistantIndex];
+    if (message?.role === "assistant") {
+      updater(message);
+    }
+  };
   sending.value = true;
 
   try {
     await streamChat(content, {
       delta: (data) => {
-        assistant.reply += String(data.text ?? "");
+        updateAssistant((message) => {
+          message.pending = false;
+          message.reply += String(data.text ?? "");
+        });
       },
       card: (data) => {
-        assistant.cards = (data.cards as Card[]) ?? assistant.cards;
+        updateAssistant((message) => {
+          message.pending = false;
+          message.cards = (data.cards as Card[]) ?? message.cards;
+        });
       },
       tool_call: (data) => {
-        assistant.toolCalls.push({ ...(data as ToolTraceItem), status: String(data.status ?? "started") });
+        updateAssistant((message) => {
+          message.toolCalls.push({ ...(data as ToolTraceItem), status: String(data.status ?? "started") });
+        });
       },
       tool_result: (data) => {
-        assistant.toolCalls.push(data as ToolTraceItem);
+        updateAssistant((message) => {
+          message.toolCalls.push(data as ToolTraceItem);
+        });
       },
       profile_update: (data) => {
-        assistant.profileUpdates?.push(data);
+        updateAssistant((message) => {
+          message.profileUpdates?.push(data);
+        });
       },
       error: (data) => {
-        assistant.error = String(data.message ?? "请求失败");
+        updateAssistant((message) => {
+          message.pending = false;
+          message.error = String(data.message ?? "请求失败");
+        });
       },
       done: (data) => {
-        assistant.reply = String(data.reply ?? assistant.reply);
-        assistant.cards = (data.cards as Card[]) ?? assistant.cards;
-        assistant.toolCalls = (data.toolCalls as ToolTraceItem[]) ?? assistant.toolCalls;
-        assistant.warnings = (data.warnings as string[]) ?? [];
+        updateAssistant((message) => {
+          message.pending = false;
+          message.reply = String(data.reply ?? message.reply);
+          message.cards = (data.cards as Card[]) ?? message.cards;
+          message.toolCalls = (data.toolCalls as ToolTraceItem[]) ?? message.toolCalls;
+          message.warnings = (data.warnings as string[]) ?? [];
+        });
       },
     });
   } catch (error) {
-    assistant.error = error instanceof Error ? error.message : "请求失败";
+    updateAssistant((message) => {
+      message.pending = false;
+      message.error = error instanceof Error ? error.message : "请求失败";
+    });
   } finally {
     sending.value = false;
   }

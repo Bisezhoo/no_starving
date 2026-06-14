@@ -12,11 +12,11 @@
 
 | 项目 | 内容 |
 |------|------|
-| 文档版本 | v0.5 |
-| 最近更新时间 | 2026-06-14 20:02:55 CST |
+| 文档版本 | v0.12 |
+| 最近更新时间 | 2026-06-14 21:12:56 CST |
 | 文档状态 | ✅ 计划已完成 |
-| 关联需求 | `智能食谱助手需求分析.md` v0.26 |
-| 关联设计 | `智能食谱助手技术设计.md` v0.26 |
+| 关联需求 | `智能食谱助手需求分析.md` v0.29 |
+| 关联设计 | `智能食谱助手技术设计.md` v0.34 |
 
 ## 1. 执行边界
 
@@ -44,6 +44,7 @@
 | `backend/app/core/sse.py` | SSE 事件序列化、JSON 转义、事件顺序辅助 |
 | `backend/app/domain/models.py` | Pydantic 模型：卡片、画像、推荐历史、Tool、SSE、Agent Memory |
 | `backend/app/domain/language.py` | 本轮消息语言检测 |
+| `backend/app/domain/card_localization.py` | 按本轮语言为卡片生成本地化摘要和必要步骤展示字段 |
 | `backend/app/domain/normalizers.py` | TheMealDB / TheCocktailDB 原始字段清洗与标准化 |
 | `backend/app/domain/tool_args.py` | Tool 参数英文归一化、来源追踪、allowlist 校验、修正错误模型 |
 | `backend/app/domain/taste_profile.py` | 画像合并、显式偏好覆盖、禁酒硬过滤信号提取 |
@@ -77,6 +78,7 @@
 | `frontend/src/components/MessageList.vue` | 消息列表 |
 | `frontend/src/components/MessageComposer.vue` | 输入框、发送按钮、前端体验校验 |
 | `frontend/src/components/AssistantMessage.vue` | 单条 Agent 消息展示；文本回复直出，按结构化数据决定是否渲染结果区块 |
+| `frontend/src/components/MarkdownReply.vue` | 使用 `marked + DOMPurify` 渲染并清洗 Agent Markdown 文本回复 |
 | `frontend/src/components/AssistantResultBlock.vue` | 结构化结果区块；仅在 `cards` 非空时展示卡片，并按需承载食材/步骤、Tool、画像变化辅助视图 |
 | `frontend/src/components/AssistantMessageTabs.vue` | 旧页签组件，Task 10B 中改造或替换为结果区块，不能再包裹所有 Agent 回复 |
 | `frontend/src/components/MealCard.vue` | 菜谱卡片 |
@@ -107,8 +109,11 @@
 | 9 | 前端 Vite Vue 基础、类型、API 和 SSE 解析 | ✅ 已完成 | `npm test -- --run` 通过，2 passed；npm 安装使用项目本地 `.npm-cache` |
 | 10 | 前端 Chat UI、页签、卡片、Tool 轨迹和画像展示 | ✅ 已完成 | `npm test -- --run` 通过，6 passed；`npm run build` 通过 |
 | 10A | 验收补洞：默认 Agent 装配、OpenRouter Step 适配、卡片事件和 memory 持久化闭环 | ✅ 已完成 | `.venv/bin/python -m pytest -q` 通过，32 passed |
-| 10B | 前端回复卡片展示层级修正 | ✅ 已完成 | 组件测试 5 passed；前端全量 11 passed；`npm run build` 通过；已更新代码走读 |
-| 11 | 全量验证、代码走读文档和审查准备 | ✅ 已完成 | Task 10B 已完成前端验证和代码走读更新 |
+| 10B | 前端回复卡片展示层级修正 | ✅ 已完成 | 新增 `chat-page.spec.ts` 覆盖流式回复渲染；前端组件 6 passed；前端全量 12 passed；`npm run build` 通过；已更新代码走读 |
+| 10C | Agent 文本基础 Markdown 安全渲染 | ✅ 已完成 | 新增 `MarkdownReply.vue` 和 Markdown 渲染测试；前端组件 7 passed；前端全量 13 passed；`npm run build` 通过；已更新代码走读 |
+| 10D | Markdown 渲染切换为 `marked + DOMPurify` | ✅ 已完成 | 已补链接/代码块/清洗测试；安装 `marked`、`dompurify`；前端组件 7 passed；前端全量 13 passed；`npm run build` 通过 |
+| 10E | Tool 后语言闭环与卡片本地化 | ✅ 已完成 | 已补 `detectedLocale` 传入 LLM 上下文、Tool 结果语言约束、卡片 `localizedSummary/localizedLanguage/localizedInstructions` 和前端本地化步骤优先展示；后端相关回归 14 passed，前端相关回归 6 passed |
+| 11 | 全量验证、代码走读文档和审查准备 | ✅ 已完成 | 后端全量 46 passed；前端全量 16 passed；`npm run build` 通过；已更新代码走读 |
 
 ## 4. 实现任务
 
@@ -1465,6 +1470,83 @@ git add frontend/src/components frontend/src/styles/app.css frontend/tests/assis
 git commit -m "fix: adjust assistant result card hierarchy"
 ```
 
+### Task 10E: Tool 后语言闭环与卡片本地化
+
+**Files:**
+- Create: `backend/app/domain/card_localization.py`
+- Modify: `backend/app/services/agent_orchestrator.py`
+- Modify: `backend/app/services/openrouter_client.py`
+- Modify: `backend/app/core/prompts.json`
+- Modify: `backend/tests/unit/test_agent_orchestrator.py`
+- Modify: `backend/tests/unit/test_openrouter_client.py`
+- Create: `backend/tests/unit/test_card_localization.py`
+- Modify: `frontend/src/components/AssistantResultBlock.vue`
+- Modify: `frontend/tests/cards.spec.ts`
+- Modify: `智能食谱助手代码走读.md`
+
+- [x] **Step 1: 写后端失败测试**
+
+验证点：
+
+1. `AgentOrchestrator` 传给 LLM 的上下文包含 `detectedLocale`。
+2. Tool 返回卡片后，`card` 事件和 `done.cards` 都包含 `localizedLanguage` 与 `localizedSummary`。
+3. 用户询问做法、步骤或详情时，详情卡片包含 `localizedInstructions`。
+4. `OpenRouterStepLlm` 组装 Tool 结果消息时，明确要求最终回复使用 `detectedLocale`。
+
+- [x] **Step 2: 运行后端失败测试**
+
+```bash
+cd backend
+.venv/bin/python -m pytest tests/unit/test_agent_orchestrator.py tests/unit/test_openrouter_client.py tests/unit/test_card_localization.py -q
+```
+
+Actual: FAIL，原因是当前上下文没有 `detectedLocale`，Prompt 没有输出语言约束，卡片没有本地化合并层。
+
+- [x] **Step 3: 实现后端最小修复**
+
+实现要点：
+
+1. `AgentOrchestrator` 在 context 中写入 `detectedLocale`。
+2. 新增 `card_localization.py`，对返回前卡片生成 `localizedLanguage`、`localizedSummary`，必要时生成 `localizedInstructions`。
+3. `OpenRouterStepLlm` 在 system prompt 和 Tool 结果回填消息中显式加入输出语言约束。
+4. 不改变 Tool 原始标准化字段，不覆盖 `title`、`instructions`、`ingredients`。
+
+- [x] **Step 4: 写并运行前端失败测试**
+
+验证 `AssistantResultBlock.vue` 在 `localizedInstructions` 存在时优先展示本地化步骤，不再把原始英文步骤作为首选展示。
+
+```bash
+cd frontend
+npm test -- cards.spec.ts --run
+```
+
+Actual: FAIL，原因是 `AssistantResultBlock.vue` 仍直接展示原始 `instructions`。
+
+- [x] **Step 5: 运行回归验证**
+
+```bash
+cd backend
+.venv/bin/python -m pytest tests/unit/test_language.py tests/unit/test_tool_args.py tests/unit/test_agent_orchestrator.py tests/unit/test_openrouter_client.py tests/unit/test_card_localization.py -q
+```
+
+```bash
+cd frontend
+npm test -- cards.spec.ts assistant-message.spec.ts --run
+```
+
+Actual: PASS，后端 14 passed，前端 2 files / 6 tests passed。
+
+- [x] **Step 6: 更新代码走读文档**
+
+补充 Tool 后语言闭环：
+
+1. `detectedLocale` 从 Agent 进入 LLM 上下文。
+2. Tool 结果回填时附带输出语言约束。
+3. 卡片在发送前合并本地化摘要和必要步骤。
+4. 前端步骤展示优先使用 `localizedInstructions`。
+
+Actual: 已更新 `智能食谱助手代码走读.md`。
+
 ### Task 11: 全量验证、代码走读文档和审查准备
 
 **Files:**
@@ -1572,8 +1654,8 @@ npm run dev -- --host 127.0.0.1 --port 5173
 
 | 检查项 | 结果 |
 |--------|------|
-| Spec 覆盖 | 覆盖需求 v0.26 的 Agent、3 个 Tool、多轮、结构化展示、语言转换、轻量画像、推荐历史、本地 JSON、单活跃锁、SSE、日志安全、错误降级和前端回复层级 |
-| 技术设计覆盖 | 覆盖技术设计 v0.26 的后端分层、Vue 前端、ToolRunner、ReAct 预算熔断、SSE 事件顺序、`done.warnings`、DeepSeek 配置、禁酒硬过滤和按需结构化结果区 |
+| Spec 覆盖 | 覆盖需求 v0.29 的 Agent、3 个 Tool、多轮、结构化展示、语言转换、轻量画像、推荐历史、本地 JSON、单活跃锁、SSE、日志安全、错误降级、前端回复层级和最近一天聊天记录加载 |
+| 技术设计覆盖 | 覆盖技术设计 v0.34 的后端分层、Vue 前端、ToolRunner、ReAct 预算熔断、SSE 事件顺序、`done.warnings`、DeepSeek 配置、禁酒硬过滤、按需结构化结果区和 Tool 后语言闭环 |
 | 待定内容扫描 | 未使用待定标记或未定义的实现语句 |
 | 类型一致性 | 计划中的 `TasteProfile`、`RecommendationRecord`、`MealCard`、`CocktailCard`、`Card`、`SseEvent` 与技术设计命名保持一致 |
 | 简单性检查 | 首版不引入数据库、账号、多 session、WebSocket 或非流式 Chat 接口 |

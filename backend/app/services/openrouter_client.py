@@ -97,6 +97,9 @@ class OpenRouterStepLlm:
 def _build_messages(context: dict[str, Any]) -> list[dict[str, str]]:
     prompts = _load_prompts()
     system_prompt = prompts["system_prompt"]
+    detected_locale = str(context.get("detectedLocale") or "").strip()
+    if detected_locale:
+        system_prompt += f"\nOutput locale: {detected_locale}. Use this locale for every natural-language reply, explanation, warning, and follow-up question."
     profile = context.get("profile")
     memory = context.get("memory")
     if profile or memory:
@@ -108,11 +111,18 @@ def _build_messages(context: dict[str, Any]) -> list[dict[str, str]]:
         {"role": "user", "content": str(context.get("message") or "")},
     ]
     if tool_results := context.get("tool_results"):
+        locale_instruction = ""
+        if detected_locale:
+            locale_instruction = (
+                f"Output locale: {detected_locale}\n"
+                f"Final reply must use {detected_locale}. Explain tool results, empty results, validation failures, and next steps in this locale.\n"
+            )
         messages.append(
             {
                 "role": "user",
                 "content": (
-                    prompts["tool_results_prefix"] + "\n"
+                    locale_instruction
+                    + prompts["tool_results_prefix"] + "\n"
                     + json.dumps(tool_results, ensure_ascii=False, separators=(",", ":"))
                 ),
             }

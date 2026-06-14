@@ -40,6 +40,7 @@ class OneToolThenReplyLlm:
         self.calls = 0
 
     async def next(self, context):
+        assert context["detectedLocale"] == "zh-CN"
         self.calls += 1
         if self.calls == 1:
             return {"tool_calls": [{"id": "call_1", "name": "search_meals", "arguments": {"ingredient": "chicken"}}]}
@@ -57,6 +58,7 @@ class CardToolRunner:
             category="Chicken",
             country="Japanese",
             ingredients=[{"name": "chicken"}, {"name": "rice"}],
+            instructions=["Cook chicken with rice until tender."],
         )
         return ToolDataResult(status="success", cards=[card], resultCount=1)
 
@@ -134,8 +136,29 @@ async def test_agent_emits_cards_and_persists_memory_after_tool_result():
     done = [event for event in events if event.event == "done"][-1]
 
     assert card_events[0].data["cards"][0]["id"] == "meal_1"
+    assert card_events[0].data["cards"][0]["localizedLanguage"] == "zh-CN"
+    assert "Chicken Rice" in card_events[0].data["cards"][0]["localizedSummary"]
+    assert "localizedInstructions" not in card_events[0].data["cards"][0] or card_events[0].data["cards"][0]["localizedInstructions"] is None
     assert profile_events[0].data["patch"] == {"likedIngredients": ["chicken"]}
     assert done.data["cards"][0]["id"] == "meal_1"
+    assert done.data["cards"][0]["localizedLanguage"] == "zh-CN"
     assert memory_store.saved_history[0].itemId == "meal_1"
     assert memory_store.saved_memory.recentTurns[-2]["role"] == "user"
     assert memory_store.saved_memory.recentTurns[-2]["content"] != "我喜欢鸡肉"
+
+
+@pytest.mark.asyncio
+async def test_agent_localizes_detail_instructions_when_user_asks_how_to_make_it():
+    agent = AgentOrchestrator(
+        llm=OneToolThenReplyLlm(),
+        tool_runner=CardToolRunner(),
+        max_tool_calls=6,
+        max_llm_steps=4,
+    )
+
+    events = [event async for event in agent.run("第一个怎么做")]
+    done = [event for event in events if event.event == "done"][-1]
+
+    assert done.data["cards"][0]["localizedLanguage"] == "zh-CN"
+    assert done.data["cards"][0]["localizedInstructions"][0].startswith("步骤 1：")
+    assert "Cook chicken with rice" in done.data["cards"][0]["localizedInstructions"][0]

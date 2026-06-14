@@ -3,6 +3,7 @@ from datetime import UTC, datetime
 from typing import Any, AsyncIterator
 from uuid import uuid4
 
+from app.domain.card_localization import localize_cards, should_localize_instructions
 from app.domain.language import detect_locale
 from app.domain.models import AgentMemory, AgentMemoryCandidate, Card, SseEvent, ToolCallSummary
 from app.domain.recommendation import append_history, rank_recommendations
@@ -35,8 +36,10 @@ class AgentOrchestrator:
         memory = state.memory
         displayed_cards: list[Card] = []
         tool_summaries: list[dict[str, Any]] = []
+        include_localized_instructions = should_localize_instructions(message)
         context: dict[str, Any] = {
             "message": message,
+            "detectedLocale": detected_locale,
             "profile": profile.model_dump(mode="json"),
             "memory": memory.model_dump(mode="json"),
             "tool_results": [],
@@ -120,7 +123,7 @@ class AgentOrchestrator:
                     yield SseEvent(event="tool_result", data=data)
                     ranked_cards = _rank_new_cards(cached_cards, profile, history, displayed_cards)
                     if ranked_cards:
-                        displayed_cards.extend(ranked_cards)
+                        displayed_cards.extend(localize_cards(ranked_cards, detected_locale, include_localized_instructions))
                         yield SseEvent(event="card", data={"cards": _dump_cards(displayed_cards)})
                     continue
 
@@ -133,7 +136,7 @@ class AgentOrchestrator:
                 yield SseEvent(event="tool_result", data=data)
                 ranked_cards = _rank_new_cards(getattr(result, "cards", []), profile, history, displayed_cards)
                 if ranked_cards:
-                    displayed_cards.extend(ranked_cards)
+                    displayed_cards.extend(localize_cards(ranked_cards, detected_locale, include_localized_instructions))
                     yield SseEvent(event="card", data={"cards": _dump_cards(displayed_cards)})
 
         warnings.append("已达 LLM 推理步数上限")

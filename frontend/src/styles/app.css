@@ -78,7 +78,7 @@ textarea {
 .message.user {
   align-self: flex-end;
   background: #dcefed;
-  padding: 10px 12px;
+  padding: 5px 12px;
   border-radius: 8px;
 }
 
@@ -132,8 +132,68 @@ textarea {
   line-height: 1.65;
 }
 
-.assistant-reply p {
+.assistant-pending {
   margin: 0;
+  color: #5b6b64;
+  line-height: 1.65;
+}
+
+.assistant-reply p,
+.markdown-reply h1,
+.markdown-reply h2,
+.markdown-reply h3,
+.markdown-reply h4,
+.markdown-reply h5,
+.markdown-reply h6,
+.markdown-reply ul,
+.markdown-reply ol,
+.markdown-reply pre,
+.markdown-reply hr {
+  margin: 0;
+}
+
+.markdown-reply {
+  display: grid;
+  gap: 8px;
+}
+
+.markdown-reply h1,
+.markdown-reply h2,
+.markdown-reply h3,
+.markdown-reply h4,
+.markdown-reply h5,
+.markdown-reply h6 {
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.markdown-reply ul,
+.markdown-reply ol {
+  display: grid;
+  gap: 4px;
+  padding-left: 22px;
+}
+
+.markdown-reply hr {
+  width: 100%;
+  border: 0;
+  border-top: 1px solid #d8e1dc;
+}
+
+.markdown-reply a {
+  color: #1f6f55;
+}
+
+.markdown-reply pre {
+  overflow-x: auto;
+  padding: 10px;
+  border-radius: 8px;
+  background: #f4f7f5;
+}
+
+.markdown-reply code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 13px;
 }
 
 .assistant-result-block {
@@ -196,6 +256,38 @@ textarea {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: 12px;
+}
+
+.card-grid.card-slider {
+  display: flex;
+  grid-template-columns: none;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x proximity;
+  padding-bottom: 16px;
+}
+
+.card-slider > .result-card {
+  flex: 0 0 min(320px, 82vw);
+  scroll-snap-align: start;
+}
+
+.result-toggle-row {
+  display: flex;
+  justify-content: center;
+  padding: 0 12px 12px;
+}
+
+.result-toggle {
+  border: 1px solid #c9d4cf;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #1f6f55;
+  padding: 8px 14px;
+}
+
+.result-toggle:hover {
+  background: #edf2ef;
 }
 
 .result-card {

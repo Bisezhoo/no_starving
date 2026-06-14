@@ -1,7 +1,23 @@
 import { parseSseChunk } from "./sse";
-import type { ParsedSseEvent, SseEventName } from "../types/chat";
+import type { ChatMessage, ParsedSseEvent, SseEventName } from "../types/chat";
 
 type EventHandlers = Partial<Record<SseEventName, (data: Record<string, unknown>) => void>>;
+
+export async function loadChatHistory(endpoint = "/api/chat/history"): Promise<ChatMessage[]> {
+  const response = await fetch(endpoint, {
+    headers: {
+      Accept: "application/json",
+    },
+  });
+
+  if (!response.ok) {
+    const error = await readJsonError(response);
+    throw new Error(error.message || `请求失败：${response.status}`);
+  }
+
+  const payload = (await response.json()) as { data?: { messages?: ChatMessage[] } };
+  return payload.data?.messages ?? [];
+}
 
 export async function streamChat(
   message: string,

@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
@@ -98,6 +98,26 @@ class AgentMemory(BaseModel):
     activeCandidates: list[AgentMemoryCandidate] = Field(default_factory=list)
     lastToolCalls: list[ToolCallSummary] = Field(default_factory=list)
     lastIntent: str | None = None
+
+
+class UserChatHistoryMessage(BaseModel):
+    role: Literal["user"]
+    content: str
+    createdAt: str
+
+
+class AssistantChatHistoryMessage(BaseModel):
+    role: Literal["assistant"]
+    reply: str = ""
+    cards: list[dict[str, Any]] = Field(default_factory=list)
+    toolCalls: list[dict[str, Any]] = Field(default_factory=list)
+    warnings: list[str] = Field(default_factory=list)
+    profileUpdates: list[dict[str, Any]] = Field(default_factory=list)
+    error: str | None = None
+    createdAt: str
+
+
+ChatHistoryMessage = UserChatHistoryMessage | AssistantChatHistoryMessage
 
 
 class SseEvent(BaseModel):

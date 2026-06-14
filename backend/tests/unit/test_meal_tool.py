@@ -42,7 +42,7 @@ async def test_search_meals_filter_limits_lookup_count():
         )
     )
 
-    client = MealDbClient(base_url="https://www.themealdb.com/api/json/v1/1", timeout_seconds=8)
+    client = MealDbClient(base_url="https://www.themealdb.com/api/json/v1/1", timeout_seconds=8, trust_env=False)
     result = await search_meals(client, {"ingredient": "chicken", "limit": 1})
 
     assert len(result.cards) == 1

@@ -115,3 +115,25 @@ async def test_openrouter_step_marks_unparseable_tool_arguments():
     step = await llm.next({"message": "推荐鸡肉", "tool_results": []})
 
     assert step["tool_calls"][0]["arguments"] == {"__invalid_json__": "{bad"}
+
+
+@pytest.mark.asyncio
+async def test_openrouter_messages_include_locale_instruction_after_tool_results():
+    lines = ["data: [DONE]"]
+    client = FakeStreamClient(lines)
+    llm = OpenRouterStepLlm(client=client, tools=[])
+
+    events = [
+        event
+        async for event in llm.stream_step(
+            {
+                "message": "我想吃鸡肉",
+                "detectedLocale": "zh-CN",
+                "tool_results": [{"name": "search_meals", "status": "success", "resultCount": 1}],
+            }
+        )
+    ]
+
+    assert events[-1]["type"] == "step"
+    assert "Output locale: zh-CN" in client.messages[0]["content"]
+    assert "Final reply must use zh-CN" in client.messages[-1]["content"]

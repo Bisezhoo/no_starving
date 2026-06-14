@@ -6,6 +6,7 @@ from app.api.chat import router as chat_router
 from app.api.health import router as health_router
 from app.core.config import Settings
 from app.domain.models import SseEvent
+from app.services.chat_history_store import ChatHistoryStore
 from app.services.conversation_lock import ConversationLock
 from app.services.default_agent import build_default_agent
 
@@ -14,6 +15,7 @@ def create_app(agent=None, settings: Settings | None = None, data_dir: Path | st
     app = FastAPI(title="No Starving Recipe Assistant")
     app.state.startup_error = None
     app.state.settings = settings
+    app.state.chat_history_store = ChatHistoryStore(_resolve_data_dir(data_dir))
     if agent is None:
         try:
             app.state.settings = settings or Settings()
@@ -39,6 +41,12 @@ class UnavailableAgent:
             event="done",
             data={"reply": "", "cards": [], "toolCalls": [], "warnings": ["服务配置不可用"]},
         )
+
+
+def _resolve_data_dir(data_dir: Path | str | None) -> Path:
+    if data_dir is not None:
+        return Path(data_dir)
+    return Path(__file__).resolve().parents[1] / "data"
 
 
 app = create_app()

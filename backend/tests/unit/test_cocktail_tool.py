@@ -31,7 +31,7 @@ async def test_search_cocktails_filters_alcohol_when_user_says_no():
         },
     )
 
-    client = CocktailDbClient(base_url="https://www.thecocktaildb.com/api/json/v1/1", timeout_seconds=8)
+    client = CocktailDbClient(base_url="https://www.thecocktaildb.com/api/json/v1/1", timeout_seconds=8, trust_env=False)
     result = await search_cocktails(client, {"query": "lemon", "allowAlcohol": False, "limit": 5})
 
     assert [card.title for card in result.cards] == ["Lemonade"]

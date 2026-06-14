@@ -69,5 +69,264 @@
     "matchReasons": [],
     "recommendedAt": "2026-06-14T11:45:05.519894+00:00",
     "title": "Sichuan Style Stir-Fried Chinese Long Beans"
+  },
+  {
+    "category": "Chicken",
+    "cuisine": "United States",
+    "itemId": "53085",
+    "itemType": "meal",
+    "mainIngredients": [
+      "chicken breasts",
+      "oil",
+      "hotsauce",
+      "lemon juice",
+      "buns",
+      "cheese",
+      "cabbage",
+      "mayonnaise",
+      "sour cream",
+      "lettuce",
+      "red pepper"
+    ],
+    "matchReasons": [
+      "recent_main_ingredient_downrank"
+    ],
+    "recommendedAt": "2026-06-14T12:51:11.014224+00:00",
+    "title": "15-minute chicken & halloumi burgers"
+  },
+  {
+    "category": "Chicken",
+    "cuisine": "Bangladesh",
+    "itemId": "53453",
+    "itemType": "meal",
+    "mainIngredients": [
+      "olive oil",
+      "onion",
+      "ginger garlic paste",
+      "tomato",
+      "cayenne pepper",
+      "curry powder",
+      "garam masala",
+      "ground turmeric",
+      "ground cumin",
+      "chicken breast",
+      "red potatoes",
+      "cilantro"
+    ],
+    "matchReasons": [
+      "recent_main_ingredient_downrank"
+    ],
+    "recommendedAt": "2026-06-14T12:51:11.014224+00:00",
+    "title": "Bengali Chicken Curry with Potatoes"
+  },
+  {
+    "category": "Chicken",
+    "cuisine": "Malaysia",
+    "itemId": "53050",
+    "itemType": "meal",
+    "mainIngredients": [
+      "chicken thighs",
+      "challots",
+      "ginger",
+      "garlic clove",
+      "cayenne pepper",
+      "turmeric",
+      "cumin",
+      "coriander",
+      "fennel",
+      "tamarind paste",
+      "coconut milk",
+      "sugar",
+      "water"
+    ],
+    "matchReasons": [
+      "recent_main_ingredient_downrank"
+    ],
+    "recommendedAt": "2026-06-14T12:51:11.014224+00:00",
+    "title": "Ayam Percik"
+  },
+  {
+    "category": "Pasta",
+    "cuisine": "Italy",
+    "itemId": "52839",
+    "itemType": "meal",
+    "mainIngredients": [
+      "linguine pasta",
+      "sugar snap peas",
+      "olive oil",
+      "garlic clove",
+      "red chilli",
+      "king prawns",
+      "cherry tomatoes",
+      "basil leaves",
+      "lettuce",
+      "bread",
+      "fromage frais",
+      "lime",
+      "caster sugar"
+    ],
+    "matchReasons": [
+      "recent_main_ingredient_downrank"
+    ],
+    "recommendedAt": "2026-06-14T12:51:11.014224+00:00",
+    "title": "Chilli prawn linguine"
+  },
+  {
+    "category": "Dessert",
+    "cuisine": "Italy",
+    "itemId": "52961",
+    "itemType": "meal",
+    "mainIngredients": [
+      "ricotta",
+      "eggs",
+      "flour",
+      "sugar",
+      "cinnamon",
+      "lemons",
+      "dark rum",
+      "icing sugar"
+    ],
+    "matchReasons": [
+      "recent_main_ingredient_downrank"
+    ],
+    "recommendedAt": "2026-06-14T12:51:11.014224+00:00",
+    "title": "Budino Di Ricotta"
+  },
+  {
+    "category": "Chicken",
+    "cuisine": "Italy",
+    "itemId": "52796",
+    "itemType": "meal",
+    "mainIngredients": [
+      "butter",
+      "olive oil",
+      "chicken",
+      "salt",
+      "squash",
+      "broccoli",
+      "mushrooms",
+      "pepper",
+      "onion",
+      "garlic",
+      "red pepper flakes",
+      "white wine",
+      "milk",
+      "heavy cream",
+      "parmesan cheese",
+      "bowtie pasta",
+      "salt",
+      "pepper",
+      "parsley"
+    ],
+    "matchReasons": [
+      "recent_main_ingredient_downrank"
+    ],
+    "recommendedAt": "2026-06-14T12:51:11.014224+00:00",
+    "title": "Chicken Alfredo Primavera"
+  },
+  {
+    "category": "Homemade Liqueur",
+    "cuisine": null,
+    "itemId": "12800",
+    "itemType": "cocktail",
+    "mainIngredients": [
+      "water",
+      "sugar",
+      "coffee",
+      "vanilla",
+      "vodka",
+      "caramel coloring"
+    ],
+    "matchReasons": [
+      "recent_main_ingredient_downrank"
+    ],
+    "recommendedAt": "2026-06-14T12:51:11.014224+00:00",
+    "title": "Coffee-Vodka"
+  },
+  {
+    "category": "Homemade Liqueur",
+    "cuisine": null,
+    "itemId": "12854",
+    "itemType": "cocktail",
+    "mainIngredients": [
+      "johnnie walker",
+      "honey",
+      "angelica root",
+      "fennel seeds",
+      "lemon peel"
+    ],
+    "matchReasons": [],
+    "recommendedAt": "2026-06-14T13:18:54.791724+00:00",
+    "title": "Scottish Highland Liqueur"
+  },
+  {
+    "category": "Vegetarian",
+    "cuisine": "Thailand",
+    "itemId": "53210",
+    "itemType": "meal",
+    "mainIngredients": [
+      "pumpkin",
+      "sunflower oil",
+      "onion",
+      "ginger",
+      "lemongrass",
+      "thai red curry paste",
+      "coconut milk",
+      "vegetable stock",
+      "lime juice",
+      "sugar",
+      "red chilli"
+    ],
+    "matchReasons": [],
+    "recommendedAt": "2026-06-14T13:41:32.440876+00:00",
+    "title": "Thai pumpkin soup"
+  },
+  {
+    "category": "Shot",
+    "cuisine": null,
+    "itemId": "13068",
+    "itemType": "cocktail",
+    "mainIngredients": [
+      "tequila",
+      "tabasco sauce"
+    ],
+    "matchReasons": [],
+    "recommendedAt": "2026-06-14T13:41:32.440876+00:00",
+    "title": "Brave Bull Shooter"
+  },
+  {
+    "category": "Seafood",
+    "cuisine": "Italy",
+    "itemId": "52777",
+    "itemType": "meal",
+    "mainIngredients": [
+      "mozzarella balls",
+      "baby plum tomatoes",
+      "fresh basil",
+      "farfalle",
+      "extra virgin olive oil",
+      "green olives",
+      "tuna",
+      "salt",
+      "pepper"
+    ],
+    "matchReasons": [],
+    "recommendedAt": "2026-06-14T13:45:14.662217+00:00",
+    "title": "Mediterranean Pasta Salad"
+  },
+  {
+    "category": "Cocktail",
+    "cuisine": null,
+    "itemId": "12562",
+    "itemType": "cocktail",
+    "mainIngredients": [
+      "grenadine",
+      "orange juice",
+      "pineapple juice",
+      "cream"
+    ],
+    "matchReasons": [],
+    "recommendedAt": "2026-06-14T13:45:14.662217+00:00",
+    "title": "Alice Cocktail"
   }
 ]
